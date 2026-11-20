@@ -21,8 +21,8 @@ async function alertOnce(kind: "warn" | "full", used: number, cap: number) {
   if (Date.now() - last < DAY) return;
   const subject =
     kind === "full"
-      ? `האתר של סבתא רוזה: האחסון הגיע לתקרה (${gb(cap)}GB), העלאת קבצים נעצרה`
-      : `האתר של סבתא רוזה: האחסון מתקרב לתקרה (${gb(used)}GB מתוך ${gb(cap)}GB)`;
+      ? `האתר של סבא לוניה: האחסון הגיע לתקרה (${gb(cap)}GB), העלאת קבצים נעצרה`
+      : `האתר של סבא לוניה: האחסון מתקרב לתקרה (${gb(used)}GB מתוך ${gb(cap)}GB)`;
   const html = `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:16px;line-height:1.6">
     <p>${kind === "full" ? "האחסון של האתר הגיע לתקרה שהגדרנו. זיכרונות בטקסט עדיין מתקבלים, אבל קבצים חדשים (תמונות, סרטונים, הקלטות) נחסמים כדי שלא יהיה חיוב." : `האחסון של האתר מתקרב לתקרה. כשיגיע ל־${gb(cap)}GB, העלאת קבצים תיעצר אוטומטית.`}</p>
     <p><b>בשימוש כרגע:</b> ${gb(used)}GB מתוך ${gb(cap)}GB (החינם ב־Cloudflare הוא 10GB).</p>

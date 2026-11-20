@@ -80,7 +80,7 @@ function PersonDrawer({ fam, id, onClose, onSwitch, onAdd }: { fam: Fam; id: str
   ];
   const branch = fam.graph.branchRoot(id);
   const name = cap(fam.nameOf(id));
-  // how this person is connected to Rosa: רוזה ← דנה ← שירה
+  // how this person is connected to Rosa: לוניה ← דנה ← שירה
   const chain = chainToRosa(fam.graph, id);
   const together = id === ROOT ? [] : photosTogether(fam.photos, id);
   const all = photosOf(fam.photos, id);

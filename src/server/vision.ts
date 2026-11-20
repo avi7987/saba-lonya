@@ -30,11 +30,11 @@ export async function estimatePhoto(jpeg: Uint8Array, opts: { rosaInPhoto?: bool
     opts.rosaInPhoto && born
       ? `The photo includes Lonya, a man born in ${born}. If you can tell which person he is, estimate his age in the photo as "rosa_age".`
       : `Set "rosa_age" to null.`;
-  const prompt = `You help a family date old photographs of their grandmother Rosa. Today is ${thisYear()}.
+  const prompt = `You help a family date old photographs of their grandfather Lonya. Today is ${thisYear()}.
 Estimate when this picture was taken from evidence such as: black-and-white vs colour, sepia or faded colour film, print borders and paper texture, photo format, clothing and hairstyles, glasses, furniture, cars, phones, signs, and image quality.
 If the picture is a reproduction of an old printed photo (a scan, or a phone photo of a print, album page or frame), set "reproduction": true and date the ORIGINAL photo.
 ${rosa}
-Pick a "category" from: ${CATEGORIES.join(", ")} (family gatherings = family, a young child = childhood, holidays/weddings/birthdays = celebrations, outdoors/trips = travel, grandchildren with an older woman = grandchildren, otherwise moments).
+Pick a "category" from: ${CATEGORIES.join(", ")} (family gatherings = family, a young child = childhood, holidays/weddings/birthdays = celebrations, outdoors/trips = travel, grandchildren with an older man = grandchildren, otherwise moments).
 Reply with ONLY a JSON object, no other text:
 {"year_from": <int>, "year_to": <int>, "best_year": <int>, "reproduction": <true|false>, "rosa_age": <int|null>, "category": "<category>", "clues_he": "<one short Hebrew sentence with the main clues>"}`;
 

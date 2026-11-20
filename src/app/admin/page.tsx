@@ -148,7 +148,7 @@ function StoryEditor({ token, memories, onSaved }: { token: string; memories: St
     setDrafting(d);
     const r = await fetch("/api/admin/story-draft", { method: "POST", headers: { "x-admin-token": token, "Content-Type": "application/json" }, body: JSON.stringify({ decade: d }) }).catch(() => null);
     setDrafting(null);
-    if (r?.status === 409) return onSaved("אין עדיין עובדות מאומתות לעשור הזה. אפשר לאשר עובדות בלשונית \"ידע על רוזה\".");
+    if (r?.status === 409) return onSaved("אין עדיין עובדות מאומתות לעשור הזה. אפשר לאשר עובדות בלשונית \"ידע על לוניה\".");
     if (!r?.ok) return onSaved("לא הצלחנו לכתוב טיוטה כרגע. נסו שוב מאוחר יותר.");
     const v = (await r.json()) as { title: string; text: string; titleRu: string; textRu: string; facts: { id: string }[] };
     const set = (name: string, value: string) => {
@@ -249,7 +249,7 @@ function StoryEditor({ token, memories, onSaved }: { token: string; memories: St
 
 type Removal = { m: StoredMemory; file?: StoredFile; req: NonNullable<StoredMemory["deleteRequest"]> };
 
-const REL: Record<string, string> = { child: "בן/בת של רוזה", grandchild: "נכד/ה של רוזה", great: "נין/נינה של רוזה", partner: "בן/בת זוג", sibling: "אח/אחות של רוזה", parent: "הורה של רוזה" };
+const REL: Record<string, string> = { child: "בן/בת של לוניה", grandchild: "נכד/ה של לוניה", great: "נין/נינה של לוניה", partner: "בן/בת זוג", sibling: "אח/אחות של לוניה", parent: "הורה של לוניה" };
 const fmtDate = (iso: string) => new Date(iso).toLocaleString("he-IL", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
 
 /** Files of a submission, fetched with the moderator's password so pending ones can be previewed. */
@@ -365,7 +365,7 @@ export default function AdminPage() {
     const parts = [REL[p.kind ?? ""] ?? ""];
     if (p.kind === "grandchild" || p.kind === "great") {
       parts.push(p.parentId ? `ההורה: ${nameOf(p.parentId)}` : `ההורה עוד לא היה בעץ ונוצר עכשיו${p.parentName ? `: ${p.parentName}` : " (בלי שם)"}`);
-      if (p.kind === "great" && !p.parentId) parts.push(p.grandparentId ? `דרך: ${nameOf(p.grandparentId)}` : `ודרך ילד/ה חדש/ה של רוזה${p.grandparentName ? `: ${p.grandparentName}` : ""}`);
+      if (p.kind === "great" && !p.parentId) parts.push(p.grandparentId ? `דרך: ${nameOf(p.grandparentId)}` : `ודרך ילד/ה חדש/ה של לוניה${p.grandparentName ? `: ${p.grandparentName}` : ""}`);
     }
     if (p.partnerOf) parts.push(`בן/בת הזוג של ${nameOf(p.partnerOf)}`);
     return parts.join(" · ");
@@ -435,7 +435,7 @@ export default function AdminPage() {
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-5 py-4">
           <span className="flex items-center gap-2.5 text-burgundy">
             <RoseBud className="h-9 w-6" still />
-            <span className="font-display text-xl">ניהול האתר של סבתא רוזה</span>
+            <span className="font-display text-xl">ניהול האתר של סבא לוניה</span>
           </span>
           <span className="flex items-center gap-2">
             <a href="/" target="_blank" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-burgundy/25 px-4 text-[0.92rem] text-burgundy hover:bg-white">
@@ -523,7 +523,7 @@ export default function AdminPage() {
                     ["memories", "כל התוכן", data.memories.filter((m) => m.status === "pending").length],
                     ["family", "עץ המשפחה", count("family", "pending")],
                     ["people", "אנשים", 0],
-                    ["knowledge", "ידע על רוזה", 0],
+                    ["knowledge", "ידע על לוניה", 0],
                     ["story", "סיפור החיים", 0],
                     ["tools", "כלים", 0],
                   ] as [Section, string, number][]

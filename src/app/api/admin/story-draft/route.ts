@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     [
       {
         role: "system",
-        content: `You write one short chapter of a family memorial website about grandmother Rosa${profile.birthYear ? ` (born ${profile.birthYear})` : ""}, for the years ${decade}–${decade + 9}.
+        content: `You write one short chapter of a family memorial website about grandfather Lonya, a musician${profile.birthYear ? ` (born ${profile.birthYear})` : ""}, for the years ${decade}–${decade + 9}.
 Use ONLY the numbered facts given. Do not add any detail, feeling, place, name or event that is not in them. If the facts are few, write little.
 Warm, simple, respectful tone. Past tense, third person.
 Reply with ONLY a JSON object:

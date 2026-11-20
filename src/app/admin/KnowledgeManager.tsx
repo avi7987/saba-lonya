@@ -34,7 +34,7 @@ function FactForm({ fact, onSave, onCancel, busy }: { fact?: StoredFact; onSave:
     >
       <label className="flex flex-col gap-1 sm:col-span-2">
         העובדה, בעברית
-        <input value={v.statement} onChange={(e) => setV({ ...v, statement: e.target.value })} required maxLength={300} className={field} placeholder="למשל: רוזה נולדה בקייב" />
+        <input value={v.statement} onChange={(e) => setV({ ...v, statement: e.target.value })} required maxLength={300} className={field} placeholder="למשל: לוניה נולדה בקייב" />
       </label>
       <label className="flex flex-col gap-1 sm:col-span-2">
         ברוסית (לא חובה)
@@ -97,13 +97,13 @@ function VoiceEditor({ token, onDone }: { token: string; onDone: (msg: string) =
     const d = (await r.json()) as { voice: string };
     setText(d.voice);
     setSaved(d.voice);
-    onDone("נשמר. התשובות של סבתא ישתמשו בזה מעכשיו");
+    onDone("נשמר. התשובות של סבא ישתמשו בזה מעכשיו");
   };
   return (
     <section className="flex flex-col gap-3 rounded-lg bg-white p-5 shadow-[var(--shadow-paper)]">
-      <h3 className="font-display text-[1.35rem] text-burgundy">איך סבתא דיברה</h3>
+      <h3 className="font-display text-[1.35rem] text-burgundy">איך סבא דיבר</h3>
       <p className="max-w-3xl text-[0.95rem] text-ink-soft">
-        בחלק &quot;מה היית רוצה לשאול אותי?&quot; סבתא עונה בגוף ראשון. כתבו כאן מילים, כינויי חיבה וביטויים שהיו שלה, כל אחד בשורה, ואפשר להוסיף הסבר קצר. התשובות ישתמשו בהם מדי פעם, כשזה
+        בחלק &quot;מה היית רוצה לשאול אותי?&quot; סבא עונה בגוף ראשון. כתבו כאן מילים, כינויי חיבה וביטויים שהיו שלה, כל אחד בשורה, ואפשר להוסיף הסבר קצר. התשובות ישתמשו בהם מדי פעם, כשזה
         מתאים. העובדות עצמן ימשיכו להגיע רק ממה שהמשפחה שיתפה. גם כל אחד מהמשפחה יכול להוסיף מילים שלה דרך &quot;הוספת זיכרון&quot; ← &quot;המילים שלה&quot;, והן מצטרפות לכאן אוטומטית.
       </p>
       <textarea
@@ -154,25 +154,25 @@ function QuizEditor({ token, onDone }: { token: string; onDone: (msg: string) =>
   return (
     <section className="flex flex-col gap-3 rounded-lg bg-white p-5 shadow-[var(--shadow-paper)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h3 className="font-display text-[1.35rem] text-burgundy">סבתא שואלת</h3>
+        <h3 className="font-display text-[1.35rem] text-burgundy">סבא שואל</h3>
         <label className="inline-flex min-h-10 cursor-pointer items-center gap-2">
-          <input type="checkbox" checked={d.on} disabled={busy} onChange={(e) => call({ on: e.target.checked }, e.target.checked ? "השאלות של סבתא מופיעות שוב באתר" : "השאלות של סבתא כבויות")} className="h-5 w-5 accent-[var(--color-rose)]" />
+          <input type="checkbox" checked={d.on} disabled={busy} onChange={(e) => call({ on: e.target.checked }, e.target.checked ? "השאלות של סבא מופיעות שוב באתר" : "השאלות של סבא כבויות")} className="h-5 w-5 accent-[var(--color-rose)]" />
           להציג את השאלות באתר
         </label>
       </div>
       <p className="max-w-3xl text-[0.95rem] text-ink-soft">
-        מי שנכנס לאתר מקבל מדי פעם כרטיס קטן עם שאלה אחת של סבתא: מתי צולמה תמונה, מי מופיע בה, מילים שלה, שנת לידה שחסרה בעץ, או אחת השאלות כאן. כל אחד מקבל כל שאלה רק פעם אחת. תשובות בכתב מגיעות לכאן
+        מי שנכנס לאתר מקבל מדי פעם כרטיס קטן עם שאלה אחת של סבא: מתי צולמה תמונה, מי מופיע בה, מילים שלה, שנת לידה שחסרה בעץ, או אחת השאלות כאן. כל אחד מקבל כל שאלה רק פעם אחת. תשובות בכתב מגיעות לכאן
         כהצעות לאישור, ותמונות מתעדכנות מיד עם שם מי שענה.
       </p>
       <label className="flex flex-col gap-1.5">
-        <span className="text-[0.95rem] text-charcoal">השאלות שלכם, כל שאלה בשורה (בגוף ראשון, כאילו סבתא שואלת)</span>
+        <span className="text-[0.95rem] text-charcoal">השאלות שלכם, כל שאלה בשורה (בגוף ראשון, כאילו סבא שואל)</span>
         <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6} dir="auto" className="w-full rounded-md border border-charcoal/20 bg-white px-3 py-2 leading-relaxed" />
       </label>
       <button type="button" onClick={() => call({ questions: text }, "השאלות נשמרו")} disabled={busy || text === d.questions} className="min-h-11 w-fit rounded-full bg-burgundy px-5 text-white disabled:opacity-40">
         {busy ? "שומר…" : "שמירת השאלות"}
       </button>
       <div className="flex flex-col gap-2 pt-2">
-        <span className="text-[0.95rem] text-charcoal">שאלות ששאלו את סבתא והיא עוד לא ידעה לענות ({d.open.length})</span>
+        <span className="text-[0.95rem] text-charcoal">שאלות ששאלו את סבא והוא עוד לא ידע לענות ({d.open.length})</span>
         <span className="text-[0.85rem] text-ink-soft">הן נשאלות את המשפחה בכרטיסים. אחרי שמישהו עונה, השאלה יורדת מהרשימה.</span>
         {d.open.length ? (
           <ul className="flex flex-col divide-y divide-line rounded-md border border-line">
@@ -230,7 +230,7 @@ export default function KnowledgeManager({ token, onDone }: { token: string; onD
   return (
     <div className="mt-8 flex flex-col gap-8">
       <p className="max-w-3xl text-ink-soft">
-        מכל מה שהמשפחה משתפת, המחשב קורא מכתבים ומתכונים מצולמים, כותב את מה שנאמר בהקלטות, ומחפש עובדות על החיים של רוזה. כל עובדה מגיעה עם המילים המדויקות שמהן נלקחה, והיא נשארת
+        מכל מה שהמשפחה משתפת, המחשב קורא מכתבים ומתכונים מצולמים, כותב את מה שנאמר בהקלטות, ומחפש עובדות על החיים של לוניה. כל עובדה מגיעה עם המילים המדויקות שמהן נלקחה, והיא נשארת
         &quot;הצעה&quot; עד שאתם מאשרים אותה. רק עובדות מאומתות משמשות לכתיבת סיפור החיים ולתשובות על שאלות.
       </p>
 

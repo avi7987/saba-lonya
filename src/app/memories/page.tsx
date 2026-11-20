@@ -3,7 +3,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/sections/Footer";
 import MemoriesView from "@/components/memories/MemoriesView";
 
-export const metadata: Metadata = { title: "ספר הזיכרונות · סבתא רוזה" };
+export const metadata: Metadata = { title: "ספר הזיכרונות · סבא לוניה" };
 
 /** every memory the family shared, in chapters by kind */
 export default function MemoriesPage() {

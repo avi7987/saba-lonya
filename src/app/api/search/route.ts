@@ -6,7 +6,7 @@ import { store } from "@/server/store";
 
 export const runtime = "nodejs";
 
-/** lower-case, no Hebrew vowel marks, ё → е, so "Роза" finds "роза" and "סבתא" finds "סָבְתָא" */
+/** lower-case, no Hebrew vowel marks, ё → е, so "Лёня" finds "леня" and "סבא" finds "סָבָא" */
 const norm = (s: string) =>
   s
     .toLowerCase()

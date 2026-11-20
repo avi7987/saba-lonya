@@ -23,8 +23,8 @@ import "@fontsource/caveat/500.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "סבתא רוזה · Бабушка Роза",
-  description: "מקום אחד לכל מה שאנחנו זוכרים מסבתא רוזה",
+  title: "סבא לוניה · Дедушка Лёня",
+  description: "מקום אחד לכל מה שאנחנו זוכרים מסבא לוניה",
   robots: { index: false, follow: false },
 };
 

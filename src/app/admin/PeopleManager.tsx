@@ -15,11 +15,11 @@ const relOf = (p: P) => (p.tree ? REL[p.tree.relation][p.gender ?? "x"] : "");
 
 /** where someone can be put in the tree, as seen from Rosa */
 const PLACES = [
-  ["child", "בן / בת של רוזה"],
+  ["child", "בן / בת של לוניה"],
   ["grandchild", "נכד / נכדה"],
   ["great", "נין / נינה"],
   ["partner", "בן / בת זוג של…"],
-  ["sibling", "אח / אחות של רוזה"],
+  ["sibling", "אח / אחות של לוניה"],
 ] as const;
 type PlaceKind = (typeof PLACES)[number][0];
 const currentPlace = (r?: RelKey): PlaceKind | "" => (r === "child" || r === "grandchild" || r === "great" || r === "sibling" ? r : r === "partner" || r === "childInLaw" ? "partner" : "");
@@ -115,7 +115,7 @@ function TreeEdit({ p, people, busy, onSave, onCancel }: { p: P; people: P[]; bu
           </div>
           {needsTarget && (
             <label className="mt-1 flex max-w-sm flex-col gap-1">
-              {kind === "partner" ? "בן/בת הזוג של:" : kind === "grandchild" ? "הילד/ה של (מילדיה של רוזה):" : "הילד/ה של (מהנכדים):"}
+              {kind === "partner" ? "בן/בת הזוג של:" : kind === "grandchild" ? "הילד/ה של (מילדיו של לוניה):" : "הילד/ה של (מהנכדים):"}
               <select value={target} onChange={(e) => setTarget(e.target.value)} required className={field}>
                 <option value="">בחירה…</option>
                 {options.map((o) => (

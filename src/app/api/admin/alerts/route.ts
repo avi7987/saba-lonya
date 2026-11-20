@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   }
   if (b.test === true) {
     const ok = await emailOwner(
-      "בדיקה: התראות מהאתר של סבתא רוזה",
+      "בדיקה: התראות מהאתר של סבא לוניה",
       `<div dir="rtl" style="font-family:Arial,sans-serif;font-size:16px;line-height:1.6"><p>זו הודעת בדיקה מדף הניהול. אם היא הגיעה, ההתראות מהאתר יגיעו לכתובת הזו.</p></div>`
     );
     return json({ ...(await state()), sent: ok });

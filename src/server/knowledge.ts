@@ -8,7 +8,7 @@ import { factStore, jobStore, store, textStore, type FactSource, type StoredFact
   What the site learns from what the family shares.
 
   Every new memory leaves a little background work: read the words in a photographed letter or
-  recipe, write down what is said in a recording, and then look for facts about Rosa's life in all
+  recipe, write down what is said in a recording, and then look for facts about Lonya's life in all
   of it. A fact is kept only together with the exact words it came from, and it stays a suggestion
   until the site's owner checks it. Nothing found by the computer is shown as certain.
 */
@@ -194,14 +194,14 @@ export async function findFacts(memoryId: string): Promise<boolean | "skip"> {
   const answer = await chat("background", [
     {
       role: "system",
-      content: `You help a family keep a record of the life of their grandmother Rosa (${profile.birthYear ? `born ${profile.birthYear}` : "born in the 1930s"}). You read what family members wrote and list FACTS about Rosa's life that the text states clearly: where she was born or lived, family events (marriage, children, moves), work, habits, dishes she cooked, things she loved, dates.
+      content: `You help a family keep a record of the life of their grandfather Lonya${profile.birthYear ? ` (born ${profile.birthYear})` : ""}, a musician who played the saxophone. You read what family members wrote and list FACTS about Lonya's life that the text states clearly: where he was born or lived, family events (marriage, children, moves), work, music (instruments, bands, songs, places he played), habits, things he loved, dates.
 Rules:
 - Only what the text says. Never guess, infer or add knowledge. If unsure, leave it out.
 - The statement must not say more than its quote: no "every summer", "always", "with the grandchildren" unless those words are in the text.
-- A title or caption of a few words (e.g. "the sea at Bat Yam") is not a fact about Rosa by itself; skip it unless the text says what Rosa did.
+- A title or caption of a few words (e.g. "the sea at Bat Yam") is not a fact about Lonya by itself; skip it unless the text says what Lonya did.
 - Ignore text that is clearly a test or not about the family.
 - Each fact must include "quote": a short phrase copied EXACTLY, character for character, from the text, that proves it.
-- "statement_he": one short sentence in Hebrew, about Rosa in the third person ("רוזה ..."). "statement_ru": the same in Russian.
+- "statement_he": one short sentence in Hebrew, about Lonya in the third person ("לוניה ..."). "statement_ru": the same in Russian.
 - "category": one of ${CATEGORIES.join(", ")}.
 - "year": a four-digit year only if the text gives it, else null. "place": a place name if the text gives it, else null.
 - At most 10 facts. If there are none, return [].

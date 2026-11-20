@@ -38,12 +38,12 @@ export function describe(g: FamilyGraph, lang: "he" | "ru") {
 
   const lines: string[] = ["The family tree on the site, as the family entered it (it may not be complete yet):"];
   const rp = partners(ROOT);
-  if (rp.length) lines.push(`Rosa's husband/partner: ${list(rp)}.`);
+  if (rp.length) lines.push(`Lonya's wife/partner: ${list(rp)}.`);
   const parents = g.realParentsOf(ROOT).filter(real);
-  if (parents.length) lines.push(`Rosa's parents: ${list(parents)}.`);
+  if (parents.length) lines.push(`Lonya's parents: ${list(parents)}.`);
   const sibs = g.siblingsOf(ROOT).filter(real);
-  if (sibs.length) lines.push(`Rosa's brothers and sisters: ${list(sibs)}.`);
-  lines.push(`Rosa has ${count(children)} children, ${count(grand)} grandchildren and ${count(great)} great-grandchildren${great2.length ? ` and ${count(great2)} great-great-grandchildren` : ""}.`);
+  if (sibs.length) lines.push(`Lonya's brothers and sisters: ${list(sibs)}.`);
+  lines.push(`Lonya has ${count(children)} children, ${count(grand)} grandchildren and ${count(great)} great-grandchildren${great2.length ? ` and ${count(great2)} great-great-grandchildren` : ""}.`);
   for (const c of children) {
     const parts = [real(c) ? name(c) : "a child not named yet"];
     const cp = partners(c);

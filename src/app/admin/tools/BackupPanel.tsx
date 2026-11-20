@@ -18,7 +18,7 @@ type Dir = FileSystemDirectoryHandle;
 type Job = { dir: string[]; name: string; url: string; size: number };
 
 /** the folder names, in Hebrew; and in plain letters for a disk or system that does not keep Hebrew names */
-const HE = { root: "גיבוי סבתא רוזה", memories: "זיכרונות", family: "משפחה", data: "נתונים", readme: "קרא אותי.txt", memo: "זיכרון.txt" };
+const HE = { root: "גיבוי סבא לוניה", memories: "זיכרונות", family: "משפחה", data: "נתונים", readme: "קרא אותי.txt", memo: "זיכרון.txt" };
 const EN = { root: "savta-roza-backup", memories: "memories", family: "family", data: "data", readme: "README.txt", memo: "memory.txt" };
 type Names = typeof HE;
 const ROOT = HE.root;
@@ -67,7 +67,7 @@ function memoText(m: Rec) {
   return `${lines.join("\n")}\n\n${m.body ?? ""}\n`;
 }
 
-const README = `גיבוי של האתר של סבתא רוזה
+const README = `גיבוי של האתר של סבא לוניה
 
 זיכרונות/  תיקייה לכל זיכרון: התמונות, הסרטונים וההקלטות שלו, וקובץ "זיכרון.txt" עם מה שנכתב.
 משפחה/     התמונות של האנשים בעץ המשפחה.

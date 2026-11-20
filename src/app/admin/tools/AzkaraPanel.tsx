@@ -54,7 +54,7 @@ function message(f: Form, url: string) {
   const d = f.date ? new Date(`${f.date}T12:00:00`) : null;
   const when = d ? `${weekday(d)}, ${heDate(d)}${hebrew(d) ? ` (${hebrew(d)})` : ""}` : "[תאריך]";
   const n = Number(f.years);
-  const occasion = n > 0 ? `${n === 1 ? "שנה" : n === 2 ? "שנתיים" : `${n} שנים`} לפטירתה של סבתא רוזה ז״ל` : "את האזכרה של סבתא רוזה ז״ל";
+  const occasion = n > 0 ? `${n === 1 ? "שנה" : n === 2 ? "שנתיים" : `${n} שנים`} לפטירתו של סבא לוניה ז״ל` : "את האזכרה של סבא לוניה ז״ל";
   const where = [f.place && `📍 ${f.place}`, f.time && `🕯️ בשעה ${f.time}`].filter(Boolean).join("\n");
   if (f.tone === "short")
     return [`תזכורת: ב${when} נציין ${occasion}.`, where, f.extra, "", `מוזמנים להוסיף לאתר שלה תמונה, סיפור או משפט שאתם זוכרים:`, url].filter((x) => x !== undefined).join("\n").replace(/\n{3,}/g, "\n\n").trim();
@@ -65,7 +65,7 @@ function message(f: Form, url: string) {
     where,
     f.extra,
     "",
-    "לקראת האזכרה, נשמח מאוד אם כל אחד יוסיף לאתר של סבתא משהו שהוא זוכר ממנה: תמונה, סיפור, מתכון, או משפט שהיא הייתה אומרת. כל זיכרון, גם קטן, שומר אותה איתנו.",
+    "לקראת האזכרה, נשמח מאוד אם כל אחד יוסיף לאתר של סבא משהו שהוא זוכר ממנו: תמונה, סיפור, שיר, או משפט שהוא היה אומר. כל זיכרון, גם קטן, שומר אותו איתנו.",
     "",
     url,
     "(אפשר גם לסרוק את הקוד המצורף)",
@@ -122,20 +122,20 @@ export default function AzkaraPanel() {
   const download = () => {
     const a = document.createElement("a");
     a.href = qr;
-    a.download = "סבתא-רוזה-QR.png";
+    a.download = "סבא-לוניה-QR.png";
     a.click();
   };
   // a card to print and put on the table: the code, large, and what it is for
   const print = () => {
     const w = window.open("", "_blank");
     if (!w) return;
-    w.document.write(`<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>סבתא רוזה · QR</title>
+    w.document.write(`<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>סבא לוניה · QR</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400&family=Heebo:wght@400&display=swap" rel="stylesheet">
 <style>@page{size:A5;margin:14mm}body{margin:0;font-family:Heebo,Arial,sans-serif;color:#3b2a2f;text-align:center}
 .card{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 2px);gap:10px}
 h1{font-family:'Frank Ruhl Libre',serif;font-weight:300;font-size:34px;color:#762e49;margin:0}
 p{font-size:18px;margin:0;line-height:1.5}img{width:62mm;height:62mm;margin:8px 0}.u{font-size:13px;color:#8a6b74;direction:ltr}</style></head>
-<body><div class="card"><h1>יש לכם זיכרון מסבתא רוזה?</h1><p>תמונה, סיפור, מתכון או משפט שלה.<br>סרקו והוסיפו לאתר שלה.</p><img src="${qr}" alt=""><p class="u">${url}</p></div>
+<body><div class="card"><h1>יש לכם זיכרון מסבא לוניה?</h1><p>תמונה, סיפור, שיר או משפט שלו.<br>סרקו והוסיפו לאתר שלה.</p><img src="${qr}" alt=""><p class="u">${url}</p></div>
 <script>window.onload=()=>setTimeout(()=>window.print(),400)</script></body></html>`);
     w.document.close();
   };

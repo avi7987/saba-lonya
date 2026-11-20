@@ -19,7 +19,7 @@ export function normalizeName(s: string) {
 }
 
 // a rough Latin "sound skeleton" of Hebrew and Cyrillic (consonants only, since vowels are
-// written so differently), so רוזה, Роза and Rosa meet
+// written so differently), so לוניה, Лёня and Lonya meet
 const HE: Record<string, string> = { א: "", ב: "b", ג: "g", ד: "d", ה: "", ו: "", ז: "z", ח: "h", ט: "t", י: "", כ: "k", ל: "l", מ: "m", נ: "n", ס: "s", ע: "", פ: "p", צ: "ts", ק: "k", ר: "r", ש: "sh", ת: "t" };
 const RU: Record<string, string> = { а: "", б: "b", в: "v", г: "g", д: "d", е: "", ж: "zh", з: "z", и: "", й: "", к: "k", л: "l", м: "m", н: "n", о: "", п: "p", р: "r", с: "s", т: "t", у: "", ф: "p", х: "h", ц: "ts", ч: "ch", ш: "sh", щ: "sh", ъ: "", ы: "", ь: "", э: "", ю: "", я: "" };
 const LATIN_VOWELS = /[aeiouy]/g;

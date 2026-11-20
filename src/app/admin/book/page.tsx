@@ -178,7 +178,7 @@ export default function BookPage() {
             <div className="flex min-h-[250mm] flex-col items-center justify-center gap-6 text-center print:min-h-[255mm]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/images/portrait.webp" alt="" className="w-[95mm] max-w-full" />
-              <h1 className="font-display text-[44pt] font-light leading-none text-burgundy">סבתא רוזה</h1>
+              <h1 className="font-display text-[44pt] font-light leading-none text-burgundy">סבא לוניה</h1>
               <p className="text-[15pt] text-ink-soft">ספר הזיכרונות של המשפחה</p>
               <p className="mt-10 text-[10pt] text-ink-soft">{today}</p>
             </div>
