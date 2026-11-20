@@ -48,7 +48,7 @@ export default function PhoneTabs() {
               {/* a soft mark behind the current tab, gliding from tab to tab */}
               {on && <motion.span layoutId="phone-tab" aria-hidden className="absolute top-1.5 h-8 w-14 rounded-full bg-blush/70" style={{ borderRadius: 999 }} transition={{ type: "spring", visualDuration: 0.4, bounce: 0 }} />}
               {add ? (
-                <span className="-mt-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose text-white shadow-[0_8px_18px_-6px_rgba(118,46,73,0.5)] ring-4 ring-paper">
+                <span className="-mt-4 flex h-12 w-12 items-center justify-center rounded-full bg-rose text-white shadow-[0_8px_18px_-6px_rgba(31,45,74,0.5)] ring-4 ring-paper">
                   <Icon className="h-6 w-6" strokeWidth={1.8} aria-hidden />
                 </span>
               ) : (

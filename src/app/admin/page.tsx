@@ -9,7 +9,7 @@ import { Check, ExternalLink, Flag, Image as ImageIcon, LogOut, Mic, RefreshCw, 
 import { family as seed } from "@/content/family";
 import { FamilyGraph, expandRequest, mergePeople, type TreePerson } from "@/lib/family";
 import type { Status, StoredFile, StoredMemory, StoredPerson } from "@/server/store";
-import { RoseBud } from "@/components/Botanical";
+import { Note } from "@/components/Botanical";
 import { cn } from "@/components/ui";
 import { decadeLabel, decadeOf, formatDate, sortYear, sourceLabel } from "@/lib/photoDate";
 import { sha256, thumbFromBlob } from "@/lib/mediaPrep";
@@ -434,7 +434,7 @@ export default function AdminPage() {
       <header className="border-b border-line bg-paper/80">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-5 py-4">
           <span className="flex items-center gap-2.5 text-burgundy">
-            <RoseBud className="h-9 w-6" still />
+            <Note className="h-9 w-6" still />
             <span className="font-display text-xl">ניהול האתר של סבא לוניה</span>
           </span>
           <span className="flex items-center gap-2">
@@ -587,7 +587,7 @@ export default function AdminPage() {
             {section === "removals" &&
               (removals.length === 0 ? (
                 <div className="mt-12 flex flex-col items-center gap-4 rounded-lg border border-dashed border-dusty/50 px-6 py-14 text-center">
-                  <RoseBud className="h-12 w-8" still />
+                  <Note className="h-12 w-8" still />
                   <p className="font-display text-xl text-charcoal">אין בקשות הסרה.</p>
                   <p className="max-w-md text-ink-soft">כשמישהו במשפחה ילחץ &quot;בקשה להסרה&quot; על תמונה או זיכרון, זה יופיע כאן ותחליטו אם למחוק.</p>
                 </div>
@@ -660,7 +660,7 @@ export default function AdminPage() {
 
             {shown.length === 0 && (
               <div className="mt-12 flex flex-col items-center gap-4 rounded-lg border border-dashed border-dusty/50 px-6 py-14 text-center">
-                <RoseBud className="h-12 w-8" still />
+                <Note className="h-12 w-8" still />
                 <p className="font-display text-xl text-charcoal">{TABS.find((x) => x.id === tab)!.empty}</p>
                 {tab === "pending" && (
                   <p className="max-w-md text-ink-soft">

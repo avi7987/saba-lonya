@@ -179,7 +179,7 @@ function Deck() {
             transition={{ type: "spring", visualDuration: 0.45, bounce: 0.3 }}
             whileHover={{ y: -2 }}
             whileTap={{ scale: 0.96 }}
-            className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] end-3 z-[65] flex items-center gap-2.5 rounded-full bg-paper py-1.5 pe-4 ps-1.5 shadow-[0_14px_34px_-14px_rgba(70,35,45,0.55),0_2px_6px_rgba(70,35,45,0.08)] ring-1 ring-line md:bottom-6 md:end-6"
+            className="fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] end-3 z-[65] flex items-center gap-2.5 rounded-full bg-paper py-1.5 pe-4 ps-1.5 shadow-[0_14px_34px_-14px_rgba(25,32,52,0.55),0_2px_6px_rgba(25,32,52,0.08)] ring-1 ring-line md:bottom-6 md:end-6"
           >
             <span className="relative shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -216,11 +216,11 @@ function Deck() {
               layout
               transition={{ type: "spring", visualDuration: 0.4, bounce: 0.1 }}
               data-lenis-prevent
-              className="max-h-[min(66svh,38rem)] overflow-y-auto rounded-[22px] bg-paper shadow-[0_22px_50px_-20px_rgba(70,35,45,0.5),0_2px_6px_rgba(70,35,45,0.08)] ring-1 ring-line"
+              className="max-h-[min(66svh,38rem)] overflow-y-auto rounded-[22px] bg-paper shadow-[0_22px_50px_-20px_rgba(25,32,52,0.5),0_2px_6px_rgba(25,32,52,0.08)] ring-1 ring-line"
             >
               <motion.div layout="position" className="flex items-center gap-2 px-4 pt-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/images/avatar.webp" alt="" className="me-1 h-11 w-11 shrink-0 rounded-full bg-blush object-cover ring-[3px] ring-white shadow-[0_6px_16px_-8px_rgba(118,46,73,0.5)]" />
+                <img src="/images/avatar.webp" alt="" className="me-1 h-11 w-11 shrink-0 rounded-full bg-blush object-cover ring-[3px] ring-white shadow-[0_6px_16px_-8px_rgba(31,45,74,0.5)]" />
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="text-[0.8rem] text-rose">{q.eyebrow}</span>
                   {phase === "ask" && <span className="truncate text-[0.92rem] text-ink-soft">{q.openers[opener]}</span>}

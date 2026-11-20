@@ -4,7 +4,7 @@ import { motion, useReducedMotion, useScroll, useTransform } from "motion/react"
 import { useRef, type CSSProperties } from "react";
 import { profile } from "@/content";
 import { useLang } from "@/lib/i18n";
-import { RoseBranch } from "../Botanical";
+import { Saxophone } from "../Botanical";
 import { TLink } from "../Transition";
 import { buttonClass } from "../ui";
 
@@ -24,7 +24,7 @@ export default function Hero() {
   return (
     <section id="top" ref={ref} aria-labelledby="hero-title" className="relative overflow-hidden pb-[clamp(3rem,6vw,5.5rem)] pt-[calc(4.5rem+env(safe-area-inset-top,0px))]">
       {/* soft daylight from the window side */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,black_55%,transparent)] bg-[radial-gradient(60rem_40rem_at_85%_0%,rgba(232,212,211,0.55),transparent_70%),radial-gradient(40rem_30rem_at_0%_100%,rgba(167,181,160,0.12),transparent_70%)] rtl:bg-[radial-gradient(60rem_40rem_at_15%_0%,rgba(232,212,211,0.55),transparent_70%),radial-gradient(40rem_30rem_at_100%_100%,rgba(167,181,160,0.12),transparent_70%)]" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,black_55%,transparent)] bg-[radial-gradient(60rem_40rem_at_85%_0%,rgba(232,220,196,0.55),transparent_70%),radial-gradient(40rem_30rem_at_0%_100%,rgba(184,151,90,0.12),transparent_70%)] rtl:bg-[radial-gradient(60rem_40rem_at_15%_0%,rgba(232,220,196,0.55),transparent_70%),radial-gradient(40rem_30rem_at_100%_100%,rgba(184,151,90,0.12),transparent_70%)]" />
 
       <div className="relative mx-auto grid max-w-[96rem] items-center gap-y-6 px-[var(--spacing-gutter)] pt-4 sm:gap-y-14 sm:pt-8 md:grid-cols-12 md:gap-x-8 md:pt-6 lg:min-h-[calc(100svh-4.5rem)]">
         {/* words */}
@@ -63,21 +63,21 @@ export default function Hero() {
         {/* the photograph */}
         <div className="relative order-1 md:order-2 md:col-span-6 lg:col-span-6 lg:col-start-7">
           <div className="relative mx-auto w-[60%] max-w-[min(30rem,calc((100svh_-_19rem)*0.8))] sm:w-[78%] md:w-[74%]">
-            <motion.div style={{ y: branchY }} className="pointer-events-none absolute -end-[26%] top-[8%] z-0 hidden h-[88%] w-[40%] md:block" aria-hidden>
-              <RoseBranch className="h-full w-full" delay={0.6} />
+            <motion.div style={{ y: branchY }} className="pointer-events-none absolute -end-[17%] top-[6%] z-0 hidden h-[92%] w-[36%] md:block rtl:end-auto rtl:-start-[30%] rtl:w-[42%]" aria-hidden>
+              <Saxophone className="h-full w-full" delay={0.6} />
             </motion.div>
 
             <motion.figure style={{ y: photoY }} className="relative z-10">
               <div
                 aria-hidden
-                className="hero-glow absolute inset-x-[4%] bottom-[2%] top-[4%] rounded-full bg-[radial-gradient(circle_at_50%_42%,#efdcd9_0%,#e8d4d3_52%,rgba(232,212,211,0)_71%)]"
+                className="hero-glow absolute inset-x-[4%] bottom-[2%] top-[4%] rounded-full bg-[radial-gradient(circle_at_50%_42%,#efdcd9_0%,#e8dcc4_52%,rgba(232,220,196,0)_71%)]"
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/portrait.webp"
                 alt={t.hero.portraitAlt}
                 width={900}
-                height={862}
+                height={968}
                 fetchPriority="high"
                 className="hero-in relative block h-auto w-full"
                 style={{ "--d": "0.35s", "--dur": "1.3s", "--y": "24px" } as CSSProperties}

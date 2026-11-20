@@ -200,10 +200,10 @@ export default function PeoplePicker({
               else if (selected.length) onChange(selected.slice(0, -1), added);
             }
           }}
-          className="w-full rounded-[var(--radius-card)] border border-charcoal/15 bg-white px-4 py-3.5 text-[1.05rem] text-charcoal outline-none transition-[border-color,box-shadow] placeholder:text-charcoal/35 focus:border-rose focus:shadow-[0_0_0_3px_rgba(184,92,120,0.15)]"
+          className="w-full rounded-[var(--radius-card)] border border-charcoal/15 bg-white px-4 py-3.5 text-[1.05rem] text-charcoal outline-none transition-[border-color,box-shadow] placeholder:text-charcoal/35 focus:border-rose focus:shadow-[0_0_0_3px_rgba(140,106,40,0.15)]"
         />
         {showList && (
-          <ul id={listId} role="listbox" aria-label={label} className="absolute inset-x-0 top-full z-30 mt-1.5 max-h-80 overflow-y-auto rounded-[var(--radius-card)] bg-white p-1.5 shadow-[0_12px_32px_-8px_rgba(60,40,30,0.25)] ring-1 ring-charcoal/10">
+          <ul id={listId} role="listbox" aria-label={label} className="absolute inset-x-0 top-full z-30 mt-1.5 max-h-80 overflow-y-auto rounded-[var(--radius-card)] bg-white p-1.5 shadow-[0_12px_32px_-8px_rgba(25,32,52,0.25)] ring-1 ring-charcoal/10">
             {fuzzyOnly && <li className="px-3 pb-1 pt-2 text-[0.82rem] text-ink-soft">{p.maybe}</li>}
             {options.map((o, i) => (
               <li

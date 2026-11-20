@@ -21,7 +21,7 @@ type Props = {
 };
 
 /* empty frames take slightly different paper tones, like prints from different years */
-const TONES = ["#efe6df", "#ece2de", "#e9e6dd", "#f0e4e1", "#e8e1da"];
+const TONES = ["#ece4d4", "#e8ded0", "#e9e6dd", "#ece2cf", "#e8e1da"];
 const toneOf = (id: string) => TONES[[...id].reduce((a, c) => a + c.charCodeAt(0), 0) % TONES.length];
 
 /**
@@ -47,7 +47,7 @@ export default function ArchivalImage({ photo, className = "", reveal = true, mo
   ) : (
     <div role="img" aria-label={`${l(photo.alt)} · ${t.placeholderShort}`} className="relative flex h-full w-full items-center justify-center overflow-hidden" style={{ backgroundColor: toneOf(photo.id) }}>
       {/* soft window light falling across the empty frame */}
-      <span aria-hidden className="absolute inset-0 bg-[linear-gradient(125deg,rgba(255,255,255,0.55)_0%,rgba(255,255,255,0)_45%,rgba(118,46,73,0.05)_100%)]" />
+      <span aria-hidden className="absolute inset-0 bg-[linear-gradient(125deg,rgba(255,255,255,0.55)_0%,rgba(255,255,255,0)_45%,rgba(31,45,74,0.05)_100%)]" />
       <span aria-hidden className="absolute inset-[6%] border border-burgundy/10" />
       {labelled && (
         <span className="relative flex max-w-[80%] flex-col items-center gap-2 text-center">

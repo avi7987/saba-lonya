@@ -38,7 +38,7 @@ function QuickTell({ question, onClose }: { question?: string; onClose?: () => v
     setState(r?.ok ? "done" : "failed");
   };
   if (state === "done") return <p role="status" className="rounded-[16px] bg-white/80 px-5 py-4 text-start text-burgundy ring-1 ring-blush">{s.tellThanks}</p>;
-  const field = "w-full rounded-[14px] border border-charcoal/15 bg-white px-4 py-3 text-[1rem] text-charcoal outline-none focus:border-rose focus:shadow-[0_0_0_3px_rgba(184,92,120,0.15)]";
+  const field = "w-full rounded-[14px] border border-charcoal/15 bg-white px-4 py-3 text-[1rem] text-charcoal outline-none focus:border-rose focus:shadow-[0_0_0_3px_rgba(140,106,40,0.15)]";
   return (
     <motion.form
       initial={{ opacity: 0, y: 8 }}
@@ -101,12 +101,12 @@ export default function AskRosa() {
   };
   const face = (size: string) => (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src="/images/avatar.webp" alt="" className={`${size} shrink-0 rounded-full bg-blush object-cover ring-4 ring-white shadow-[0_8px_24px_-10px_rgba(118,46,73,0.45)]`} />
+    <img src="/images/avatar.webp" alt="" className={`${size} shrink-0 rounded-full bg-blush object-cover ring-4 ring-white shadow-[0_8px_24px_-10px_rgba(31,45,74,0.45)]`} />
   );
 
   return (
     <section id="ask" aria-labelledby="ask-title" className="relative overflow-hidden py-[clamp(3rem,6vw,5rem)]">
-      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(48rem_22rem_at_50%_0%,rgba(232,212,211,0.6),transparent_70%),radial-gradient(30rem_18rem_at_50%_100%,rgba(167,181,160,0.14),transparent_70%)]" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[radial-gradient(48rem_22rem_at_50%_0%,rgba(232,220,196,0.6),transparent_70%),radial-gradient(30rem_18rem_at_50%_100%,rgba(184,151,90,0.14),transparent_70%)]" />
       <Container className="relative flex flex-col items-center gap-6 text-center">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ type: "spring", visualDuration: 0.6, bounce: 0.25 }}>
           {face("h-24 w-24 sm:h-28 sm:w-28")}
@@ -126,7 +126,7 @@ export default function AskRosa() {
             e.preventDefault();
             go(q);
           }}
-          className="group mt-2 flex w-full max-w-2xl items-center gap-2 rounded-full bg-white p-2 ps-5 shadow-[0_2px_4px_rgba(60,40,30,0.06),0_18px_44px_-18px_rgba(118,46,73,0.35)] ring-1 ring-blush transition-shadow focus-within:shadow-[0_2px_4px_rgba(60,40,30,0.06),0_22px_50px_-16px_rgba(118,46,73,0.45)] focus-within:ring-rose/50"
+          className="group mt-2 flex w-full max-w-2xl items-center gap-2 rounded-full bg-white p-2 ps-5 shadow-[0_2px_4px_rgba(25,32,52,0.06),0_18px_44px_-18px_rgba(31,45,74,0.35)] ring-1 ring-blush transition-shadow focus-within:shadow-[0_2px_4px_rgba(25,32,52,0.06),0_22px_50px_-16px_rgba(31,45,74,0.45)] focus-within:ring-rose/50"
         >
           <Sparkles className="h-5 w-5 shrink-0 text-rose" strokeWidth={1.5} aria-hidden />
           <div className="relative min-w-0 flex-1">
@@ -167,7 +167,7 @@ export default function AskRosa() {
               dir="auto"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-4 max-w-[85%] self-end rounded-[20px] rounded-ee-[6px] bg-burgundy px-5 py-3 text-start text-[1.05rem] text-white shadow-[0_8px_20px_-12px_rgba(90,30,50,0.6)]"
+              className="mt-4 max-w-[85%] self-end rounded-[20px] rounded-ee-[6px] bg-burgundy px-5 py-3 text-start text-[1.05rem] text-white shadow-[0_8px_20px_-12px_rgba(20,28,48,0.6)]"
             >
               {asked}
             </motion.p>
@@ -188,7 +188,7 @@ export default function AskRosa() {
               className="flex w-full items-end gap-3 self-start"
             >
               {face("hidden h-11 w-11 sm:block")}
-              <div className="flex min-w-0 flex-1 flex-col items-stretch gap-5 rounded-[24px] rounded-es-[6px] bg-white/80 p-5 text-start ring-1 ring-blush shadow-[0_14px_36px_-22px_rgba(118,46,73,0.45)] sm:p-7">
+              <div className="flex min-w-0 flex-1 flex-col items-stretch gap-5 rounded-[24px] rounded-es-[6px] bg-white/80 p-5 text-start ring-1 ring-blush shadow-[0_14px_36px_-22px_rgba(31,45,74,0.45)] sm:p-7">
                 <span className="flex items-center gap-2 text-[0.85rem] text-burgundy">
                   {face("h-7 w-7 ring-2 sm:hidden")}
                   {s.rosa}

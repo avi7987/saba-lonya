@@ -4,9 +4,9 @@ import { motion, useReducedMotion } from "motion/react";
 import { ease } from "@/lib/motion";
 
 /*
-  Hand-drawn botanical line work. Each drawing is used once, in one place, so the
-  site never repeats the same flower. They draw themselves in slowly the first time
-  they are seen and then stay still.
+  Hand-drawn line work: a saxophone and its notes (Lonya played). The drawings draw themselves in
+  slowly the first time they are seen; the notes from the saxophone keep rising, gently, as if it
+  were playing. With reduced motion everything simply stands still.
 */
 
 type DrawProps = { className?: string; delay?: number; still?: boolean };
@@ -24,9 +24,39 @@ function useDraw(delay = 0, still = false) {
 
 const ink = { fill: "none", stroke: "currentColor", strokeLinecap: "round" as const, strokeLinejoin: "round" as const, vectorEffect: "non-scaling-stroke" as const };
 
-/** Long-stemmed open rose with leaves and a bud. Used beside the hero portrait. */
-export function RoseBranch({ className, delay = 0, still }: DrawProps) {
+/** a note head, filled, tilted as written by hand */
+const Head = ({ x = 0, y = 0, s = 1 }: { x?: number; y?: number; s?: number }) => (
+  <ellipse cx={x} cy={y} rx={5 * s} ry={3.6 * s} transform={`rotate(-25 ${x} ${y})`} fill="var(--color-burgundy)" stroke="none" />
+);
+/** one eighth note: head, stem and a small flag */
+const Eighth = ({ s = 1 }: { s?: number }) => (
+  <>
+    <Head s={s} />
+    <path d={`M${4.4 * s} ${-1.5 * s} V${-24 * s} C${9 * s} ${-20 * s} ${12 * s} ${-16 * s} ${11 * s} ${-10 * s}`} />
+  </>
+);
+/** two eighth notes joined by a beam */
+const Pair = ({ s = 1 }: { s?: number }) => (
+  <>
+    <Head s={s} />
+    <Head x={18 * s} y={-6 * s} s={s} />
+    <path d={`M${4.4 * s} ${-1.5 * s} V${-24 * s} L${22.4 * s} ${-30 * s} V${-7.5 * s} M${4.4 * s} ${-19 * s} L${22.4 * s} ${-25 * s}`} />
+  </>
+);
+
+/** An alto saxophone with notes rising from its bell. Used beside the portrait in the opening. */
+export function Saxophone({ className, delay = 0, still }: DrawProps) {
   const d = useDraw(delay, still);
+  const reduce = useReducedMotion() || still;
+  // the notes come out of the bell one after another, rise and fade, over and over, slowly
+  const rise = (i: number) =>
+    reduce
+      ? {}
+      : {
+          initial: { opacity: 0, y: 26 },
+          animate: { opacity: [0, 1, 1, 0], y: [26, 0, -12, -26] },
+          transition: { duration: 7, times: [0, 0.25, 0.75, 1], delay: delay + 2.2 + i * 1.6, repeat: Infinity, repeatDelay: 1.4, ease: "easeInOut" as const },
+        };
   return (
     <svg viewBox="0 0 200 420" className={className} aria-hidden="true">
       <defs>
@@ -36,94 +66,125 @@ export function RoseBranch({ className, delay = 0, still }: DrawProps) {
           <feGaussianBlur stdDeviation="2.2" />
         </filter>
       </defs>
-      {/* watercolor wash behind the bloom */}
+      {/* a warm wash of brass behind the bell */}
       <motion.ellipse
-        cx="101"
-        cy="90"
+        cx="148"
+        cy="246"
         rx="40"
-        ry="36"
+        ry="32"
         fill="var(--color-dusty)"
-        opacity="0.16"
+        opacity="0.18"
         filter="url(#wash)"
         initial={{ scale: 0.6, opacity: 0 }}
-        whileInView={{ scale: 1, opacity: 0.16 }}
+        whileInView={{ scale: 1, opacity: 0.18 }}
         viewport={{ once: true }}
         transition={{ duration: 2.4, delay: delay + 0.8, ease }}
       />
-      <motion.ellipse cx="70" cy="146" rx="9" ry="13" fill="var(--color-dusty)" opacity="0.12" filter="url(#wash)" initial={{ opacity: 0 }} whileInView={{ opacity: 0.12 }} viewport={{ once: true }} transition={{ duration: 2, delay: delay + 1.4 }} />
-      <g {...ink} stroke="var(--color-sage-deep)" strokeWidth="1">
-        <motion.path d="M100 410 C102 340 96 280 104 210 S98 140 100 122" {...d(0, 2.6)} />
-        <motion.path d="M99 205 C88 190 78 176 71 158" {...d(1)} />
-        <motion.path d="M103 262 C120 248 146 246 160 252 C146 266 122 272 103 262 Z" {...d(2)} />
-        <motion.path d="M103 262 C124 256 142 253 160 252" {...d(3)} strokeOpacity="0.6" />
-        <motion.path d="M100 322 C82 306 58 304 44 312 C58 326 82 330 100 322 Z" {...d(3)} />
-        <motion.path d="M100 322 C80 314 60 312 44 312" {...d(4)} strokeOpacity="0.6" />
-        <motion.path d="M102 176 C114 166 132 164 140 168 C130 178 114 182 102 176 Z" {...d(4)} />
-        <motion.path d="M92 122 C86 130 80 132 74 130 M108 122 C114 130 122 132 128 128" {...d(5)} />
-        <motion.path d="M71 158 C64 160 60 164 58 170 M71 158 C77 160 81 164 83 170" {...d(5)} />
-        <motion.path d="M101 300 l6 -4 M98 362 l-6 -3 M103 232 l5 -3" {...d(6, 1)} />
+      {/* the saxophone, in brass */}
+      <g {...ink} stroke="var(--color-rose)" strokeWidth="1.1">
+        <motion.path d="M40 34 L52 26 L60 36 L49 44 Z" {...d(0, 0.8)} />
+        <motion.path d="M55 40 C66 50 78 60 86 74 C90 82 92 90 92 98 M50 44 C61 54 72 64 79 77 C83 85 85 92 85 98" {...d(0, 1.4)} />
+        <motion.path d="M85 98 C84 160 82 240 80 318 M99 98 C101 160 104 240 106 318 M84 98 L100 98" {...d(1, 2)} />
+        <motion.path d="M80 318 C78 372 150 380 154 326 M106 318 C108 346 130 350 132 328" {...d(2, 1.6)} />
+        <motion.path d="M154 326 C156 300 160 280 177 254 M132 328 C132 302 128 280 115 258" {...d(3, 1.6)} />
+        <motion.ellipse cx="146" cy="252" rx="32" ry="8.5" transform="rotate(-8 146 252)" {...d(4, 1.4)} />
+        <motion.path d="M124 272 C138 277 156 275 168 268" strokeOpacity="0.5" {...d(5, 1)} />
       </g>
+      {/* its keys */}
+      <g {...ink} stroke="var(--color-sage-deep)" strokeWidth="0.9">
+        <motion.path d="M96 130 a5 5 0 1 1 -10 0 a5 5 0 1 1 10 0 M96.4 160 a5.4 5.4 0 1 1 -10.8 0 a5.4 5.4 0 1 1 10.8 0 M97.8 192 a5.8 5.8 0 1 1 -11.6 0 a5.8 5.8 0 1 1 11.6 0 M98 226 a6 6 0 1 1 -12 0 a6 6 0 1 1 12 0 M99.2 260 a6.2 6.2 0 1 1 -12.4 0 a6.2 6.2 0 1 1 12.4 0 M99.4 292 a6.4 6.4 0 1 1 -12.8 0 a6.4 6.4 0 1 1 12.8 0" {...d(3, 2)} />
+        <motion.path d="M100 145 C108 150 108 205 101 212 M101 240 C110 246 112 280 104 290 M82 175 l-6 2 M82 245 l-6 2" {...d(4, 1.6)} />
+      </g>
+      {/* the music */}
       <g {...ink} stroke="var(--color-burgundy)" strokeWidth="1.1">
-        <motion.path d="M70 92 C66 70 82 52 100 52 C120 52 136 68 131 92 C127 112 112 122 100 122 C86 122 73 112 70 92 Z" {...d(1, 2.4)} />
-        <motion.path d="M100 78 c-8 0 -12 6 -10 12 c2 6 10 8 15 4 c5 -4 4 -12 -2 -15 c-8 -4 -19 1 -21 10 c-2 10 6 19 17 19 c11 0 20 -9 19 -20" {...d(2, 2.6)} />
-        <motion.path d="M78 74 C84 64 96 60 106 63 M122 76 C118 66 110 60 100 60" {...d(3)} />
-        <motion.path d="M72 100 C80 112 94 116 104 114 M128 98 C124 108 116 114 106 116" {...d(4)} />
-        <motion.path d="M70 92 C58 86 56 74 64 66 C68 72 70 80 74 84 M131 92 C143 86 146 74 138 64 C134 70 132 78 127 84" {...d(5)} />
-        <motion.path d="M71 158 C62 151 62 139 70 130 C78 139 79 151 71 158 Z M70 131 C69 140 70 150 71 158" {...d(6)} />
+        <motion.g {...rise(0)}>
+          <g transform="translate(150 204)">
+            <Eighth />
+          </g>
+        </motion.g>
+        <motion.g {...rise(1)}>
+          <g transform="translate(172 158)">
+            <Pair />
+          </g>
+        </motion.g>
+        <motion.g {...rise(2)}>
+          <g transform="translate(140 112)">
+            <Eighth s={0.88} />
+          </g>
+        </motion.g>
+        <motion.g {...rise(3)} opacity={reduce ? 0.7 : undefined}>
+          <g transform="translate(170 68)">
+            <Eighth s={0.76} />
+          </g>
+        </motion.g>
       </g>
     </svg>
   );
 }
 
-/** A small closed bud, for dividers and the closing page. */
-export function RoseBud({ className, delay = 0, still }: DrawProps) {
+/** A single note, for dividers, the logo mark and small places. */
+export function Note({ className, delay = 0, still }: DrawProps) {
   const d = useDraw(delay, still);
   return (
     <svg viewBox="0 0 40 60" className={className} aria-hidden="true">
-      <g {...ink} strokeWidth="1">
-        <motion.path stroke="var(--color-burgundy)" d="M20 26 C11 20 11 8 20 2 C29 8 29 20 20 26 Z M20 3 C17 10 18 19 20 26 M20 10 C23 13 24 18 22 23" {...d(0, 1.6)} />
-        <motion.path stroke="var(--color-sage-deep)" d="M20 26 C14 28 10 31 8 36 M20 26 C26 28 30 31 32 36 M20 26 V58 M20 44 C26 40 32 40 36 42 C31 47 25 48 20 44" {...d(1, 1.8)} />
+      <g {...ink} strokeWidth="1.2">
+        <motion.path stroke="var(--color-burgundy)" d="M27 8 V44 M27 8 C34 14 37 20 35 28" {...d(0, 1.4)} />
+        <motion.ellipse cx="20" cy="45" rx="8" ry="5.8" transform="rotate(-25 20 45)" stroke="var(--color-burgundy)" fill="var(--color-burgundy)" fillOpacity="0.9" {...d(1, 1)} />
       </g>
     </svg>
   );
 }
 
-/** Horizontal sprig of leaves; for the timeline and section openers. */
-export function LeafSprig({ className, delay = 0, still }: DrawProps) {
+/** A gently rising line with a few notes on it; for section openers. */
+export function NoteLine({ className, delay = 0, still }: DrawProps) {
   const d = useDraw(delay, still);
   return (
     <svg viewBox="0 0 220 60" className={className} aria-hidden="true">
       <g {...ink} stroke="var(--color-sage-deep)" strokeWidth="1">
-        <motion.path d="M6 46 C60 42 120 34 214 14" {...d(0, 2)} />
-        <motion.path d="M50 42 C46 30 50 20 60 14 C64 26 60 36 50 42 Z" {...d(1)} />
-        <motion.path d="M92 37 C100 46 112 50 124 48 C118 38 106 34 92 37 Z" {...d(2)} />
-        <motion.path d="M134 29 C130 17 134 8 144 3 C148 15 144 24 134 29 Z" {...d(3)} />
-        <motion.path d="M172 22 C180 30 192 33 202 30 C196 21 184 18 172 22 Z" {...d(4)} />
+        <motion.path d="M6 50 C60 46 120 38 214 18" {...d(0, 2)} />
+      </g>
+      <g {...ink} stroke="var(--color-burgundy)" strokeWidth="1.1">
+        <motion.g initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1, delay: delay + 0.8 }}>
+          <g transform="translate(58 44)">
+            <Eighth s={0.7} />
+          </g>
+          <g transform="translate(118 36)">
+            <Pair s={0.7} />
+          </g>
+          <g transform="translate(182 24)">
+            <Eighth s={0.7} />
+          </g>
+        </motion.g>
       </g>
     </svg>
   );
 }
 
-/** Single open rose seen from above: the closing mark. */
-export function RoseTop({ className, delay = 0, still }: DrawProps) {
+/** Two notes joined, in a soft circle: the closing mark. */
+export function Notes({ className, delay = 0, still }: DrawProps) {
   const d = useDraw(delay, still);
   return (
     <svg viewBox="0 0 120 120" className={className} aria-hidden="true">
-      <g {...ink} stroke="var(--color-burgundy)" strokeWidth="1">
-        <motion.path d="M60 52 c-5 0 -8 4 -7 8 c1 5 7 6 10 3 c4 -3 3 -9 -1 -11 c-6 -3 -14 1 -15 8 c-1 8 5 14 13 14 c9 0 15 -7 14 -16 c-1 -10 -10 -17 -20 -16 c-12 1 -20 11 -19 22 c1 13 13 22 26 21 c14 -1 24 -13 23 -27" {...d(0, 3)} />
-        <motion.path d="M30 50 C24 34 38 18 56 18 M90 50 C96 34 82 18 64 18 M30 72 C26 90 42 104 60 104 C78 104 94 90 90 72" {...d(2, 2.4)} />
-        <motion.path d="M22 60 C10 50 14 30 30 26 M98 60 C110 50 106 30 90 26 M26 82 C16 96 30 112 46 108 M94 82 C104 96 90 112 74 108" {...d(3, 2.4)} />
+      <g {...ink} stroke="var(--color-dusty)" strokeWidth="1">
+        <motion.path d="M60 12 C88 12 108 32 108 60 C108 88 88 108 60 108 C32 108 12 88 12 60 C12 34 30 15 54 12" {...d(0, 2.6)} />
+      </g>
+      <g {...ink} stroke="var(--color-burgundy)" strokeWidth="1.2">
+        <motion.g initial={{ opacity: 0, y: 6 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 1.2, delay: delay + 0.9, ease }}>
+          <g transform="translate(44 76)">
+            <Pair s={1.25} />
+          </g>
+        </motion.g>
       </g>
     </svg>
   );
 }
 
-/** Thin rule with a bud in the middle; marks a turn between chapters. */
+/** Thin rule with a note in the middle; marks a turn between chapters. */
 export function Divider({ className }: { className?: string }) {
   return (
     <div className={`flex items-center justify-center gap-5 ${className ?? ""}`} aria-hidden="true">
       <span className="h-px w-24 bg-line sm:w-40" />
-      <RoseBud className="h-10 w-7" delay={0.2} />
+      <Note className="h-10 w-7" delay={0.2} />
       <span className="h-px w-24 bg-line sm:w-40" />
     </div>
   );

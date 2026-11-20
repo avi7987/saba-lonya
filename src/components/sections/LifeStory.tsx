@@ -152,7 +152,7 @@ function Decade({ decade, photos, note, facts, index }: { decade: number; photos
               key={i}
               // each photo a print on the page: a white border and a soft shadow, as in the album
               className={cn(
-                "rounded-[14px] bg-white p-1.5 shadow-[0_1px_2px_rgba(70,35,45,0.08),0_10px_24px_-14px_rgba(70,35,45,0.3)]",
+                "rounded-[14px] bg-white p-1.5 shadow-[0_1px_2px_rgba(25,32,52,0.08),0_10px_24px_-14px_rgba(25,32,52,0.3)]",
                 shown.length === 1 && "aspect-[4/3]",
                 shown.length === 2 && "aspect-[4/5]",
                 shown.length >= 3 && (i === 0 ? "col-span-2 aspect-[4/3] sm:row-span-2 sm:aspect-auto" : "aspect-square")

@@ -73,7 +73,7 @@ export default function BookPage() {
       setNotes(s.decades ?? {});
       setLoaded(true);
     });
-    QRCode.toDataURL(site, { width: 600, margin: 1, color: { dark: "#5e2338", light: "#ffffff" } }).then(setQr).catch(() => {});
+    QRCode.toDataURL(site, { width: 600, margin: 1, color: { dark: "#1a2540", light: "#ffffff" } }).then(setQr).catch(() => {});
   }, [ok, site]);
 
   const decades = useMemo(() => {
@@ -125,7 +125,7 @@ export default function BookPage() {
     );
 
   return (
-    <div className="book-root min-h-screen bg-[#ece6e1] print:bg-white">
+    <div className="book-root min-h-screen bg-[#e9e4da] print:bg-white">
       <style>{`
         @page { size: A4; margin: 16mm 15mm 18mm; }
         @media print {
@@ -149,7 +149,7 @@ export default function BookPage() {
           <div className="flex flex-wrap gap-x-4 gap-y-1">
             {PARTS.map(([k, label]) => (
               <label key={k} className="inline-flex min-h-9 items-center gap-1.5 text-[0.92rem]">
-                <input type="checkbox" checked={parts[k]} onChange={(e) => setParts((p) => ({ ...p, [k]: e.target.checked }))} className="accent-[#b5566f]" />
+                <input type="checkbox" checked={parts[k]} onChange={(e) => setParts((p) => ({ ...p, [k]: e.target.checked }))} className="accent-[#8c6a28]" />
                 {label}
               </label>
             ))}
@@ -190,8 +190,8 @@ export default function BookPage() {
             <Title>סיפור החיים</Title>
             {decades.map(({ d, note, facts: fs, photos: ps }) => (
               <section key={d} className="mt-8 first-of-type:mt-4">
-                <div className="keep flex items-end gap-4 border-b border-dashed border-[#d9c3c9] pb-2">
-                  <span className="font-display text-[30pt] leading-[0.8] text-[#a87482]">{d}</span>
+                <div className="keep flex items-end gap-4 border-b border-dashed border-[#d8c9a8] pb-2">
+                  <span className="font-display text-[30pt] leading-[0.8] text-[#9c8250]">{d}</span>
                   <h3 className="font-display text-[15pt] text-burgundy">{note?.title || decadeLabel(d, "he")}</h3>
                 </div>
                 {note?.text && <p className="keep mt-3 whitespace-pre-line text-[11pt] leading-[1.75]">{note.text}</p>}
@@ -228,10 +228,10 @@ export default function BookPage() {
             <Title>המילים שלה</Title>
             <div className="mt-6 columns-2 gap-6">
               {by("words").map((m) => (
-                <blockquote key={m.id} className="keep mb-5 rounded-[3mm] bg-[#fbf0f2] p-4">
+                <blockquote key={m.id} className="keep mb-5 rounded-[3mm] bg-[#f3ead8] p-4">
                   <p className="whitespace-pre-line font-display text-[15pt] leading-snug text-burgundy">“{m.body.trim()}”</p>
                   {m.title && <p className="mt-2 text-[9.5pt] text-charcoal/80">{m.title}</p>}
-                  <p className="mt-2 font-hand text-[12pt] text-[#a24a64]">{m.author}</p>
+                  <p className="mt-2 font-hand text-[12pt] text-[#8a6420]">{m.author}</p>
                 </blockquote>
               ))}
             </div>
@@ -267,7 +267,7 @@ export default function BookPage() {
                   <figcaption className="mt-2 text-[10pt] leading-relaxed">
                     {m.title && <b className="block font-display text-[12pt] font-normal text-burgundy">{m.title}</b>}
                     {m.body && <span className="whitespace-pre-line">{m.body}</span>}
-                    <span className="mt-1 block font-hand text-[11pt] text-[#a24a64]">{m.author}</span>
+                    <span className="mt-1 block font-hand text-[11pt] text-[#8a6420]">{m.author}</span>
                   </figcaption>
                 </figure>
               ))}
@@ -295,7 +295,7 @@ export default function BookPage() {
 
 /** one A4 sheet on screen; on paper, the content simply flows from page to page */
 function Sheet({ children }: { children: React.ReactNode }) {
-  return <article className="sheet w-[210mm] max-w-full bg-white px-[15mm] py-[16mm] shadow-[0_10px_30px_-12px_rgba(70,35,45,0.35)] print:px-0 print:py-0">{children}</article>;
+  return <article className="sheet w-[210mm] max-w-full bg-white px-[15mm] py-[16mm] shadow-[0_10px_30px_-12px_rgba(25,32,52,0.35)] print:px-0 print:py-0">{children}</article>;
 }
 
 function Title({ children }: { children: React.ReactNode }) {
@@ -318,7 +318,7 @@ function Entry({ m }: { m: Memory }) {
         <img src={full} alt="" className="keep mt-3 max-h-[95mm] max-w-full rounded-[3mm]" />
       )}
       {m.body && <p className="mt-3 whitespace-pre-line text-[11pt] leading-[1.8]">{m.body}</p>}
-      <p className="mt-3 font-hand text-[12pt] text-[#a24a64]">
+      <p className="mt-3 font-hand text-[12pt] text-[#8a6420]">
         {m.author}
         {m.relation && <span className="font-sans text-[9pt] text-ink-soft"> · {m.relation}</span>}
       </p>

@@ -145,7 +145,7 @@ export default function SortView() {
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", visualDuration: 0.4, bounce: 0.1 }}
-            className="fixed inset-x-0 bottom-0 z-[75] flex max-h-[75svh] flex-col rounded-t-[22px] bg-paper shadow-[0_-12px_40px_-12px_rgba(70,35,45,0.35)] ring-1 ring-line"
+            className="fixed inset-x-0 bottom-0 z-[75] flex max-h-[75svh] flex-col rounded-t-[22px] bg-paper shadow-[0_-12px_40px_-12px_rgba(25,32,52,0.35)] ring-1 ring-line"
             style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
           >
             {/* the choices scroll; who is saving and the save button always stay in view */}

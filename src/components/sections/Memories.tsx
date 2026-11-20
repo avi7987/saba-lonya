@@ -31,7 +31,7 @@ export function MemoryCard({ m, index = 0, className }: { m: Memory; index?: num
   const photo = m.photoId ? photoById(m.photoId) : undefined;
   const withPhoto = !!(photo || m.photoSrc);
   // a recipe on a lined index card; the rest alternate between two soft papers
-  const tone = m.type === "recipe" ? "bg-[#fdf7ec] bg-[repeating-linear-gradient(to_bottom,transparent_0_31px,rgba(168,116,130,0.12)_31px_32px)]" : index % 3 === 1 ? "bg-[#fbf3f1]" : "bg-white";
+  const tone = m.type === "recipe" ? "bg-[#fdf7ec] bg-[repeating-linear-gradient(to_bottom,transparent_0_31px,rgba(168,140,90,0.12)_31px_32px)]" : index % 3 === 1 ? "bg-[#f7f1e6]" : "bg-white";
 
   // with a mouse, the card leans a little toward it, like a photo held in the hand, and its shadow moves the other way
   const reduce = useReducedMotion();
@@ -39,7 +39,7 @@ export function MemoryCard({ m, index = 0, className }: { m: Memory; index?: num
   const tiltY = useMotionValue(0);
   const rotateX = useSpring(tiltX, { stiffness: 150, damping: 20 });
   const rotateY = useSpring(tiltY, { stiffness: 150, damping: 20 });
-  const shadow = useTransform(() => `${(-rotateY.get() * 3).toFixed(1)}px ${(14 + rotateX.get() * 3).toFixed(1)}px 34px -18px rgba(70,35,45,${(Math.abs(rotateX.get()) + Math.abs(rotateY.get())) * 0.07})`);
+  const shadow = useTransform(() => `${(-rotateY.get() * 3).toFixed(1)}px ${(14 + rotateX.get() * 3).toFixed(1)}px 34px -18px rgba(25,32,52,${(Math.abs(rotateX.get()) + Math.abs(rotateY.get())) * 0.07})`);
   const lean = (e: PointerEvent<HTMLElement>) => {
     if (reduce || e.pointerType !== "mouse") return;
     const r = e.currentTarget.getBoundingClientRect();
@@ -63,7 +63,7 @@ export function MemoryCard({ m, index = 0, className }: { m: Memory; index?: num
       onPointerLeave={rest}
       style={{ rotateX, rotateY, transformPerspective: 1100 } as MotionStyle}
       className={cn(
-        "group relative mb-8 flex scroll-mt-28 break-inside-avoid flex-col rounded-[18px] border border-line p-6 shadow-[0_1px_2px_rgba(70,35,45,0.07),0_10px_24px_-14px_rgba(70,35,45,0.3)] transition-shadow duration-500 hover:shadow-[0_2px_4px_rgba(70,35,45,0.08),0_18px_36px_-16px_rgba(70,35,45,0.36)] sm:p-7",
+        "group relative mb-8 flex scroll-mt-28 break-inside-avoid flex-col rounded-[18px] border border-line p-6 shadow-[0_1px_2px_rgba(25,32,52,0.07),0_10px_24px_-14px_rgba(25,32,52,0.3)] transition-shadow duration-500 hover:shadow-[0_2px_4px_rgba(25,32,52,0.08),0_18px_36px_-16px_rgba(25,32,52,0.36)] sm:p-7",
         tone,
         className
       )}
@@ -134,7 +134,7 @@ export function MemoryCard({ m, index = 0, className }: { m: Memory; index?: num
 
       <footer className="mt-6 flex flex-wrap items-end justify-between gap-3 border-t border-line pt-4">
         <span className="flex flex-col">
-          <span className="font-hand text-xl leading-tight text-[#a24a64]">{m.author}</span>
+          <span className="font-hand text-xl leading-tight text-[#8a6420]">{m.author}</span>
           <span className="mt-1 flex flex-wrap items-center gap-2 text-[0.8rem] text-ink-soft">
             {m.relation && <Pill>{m.relation}</Pill>}
             <time dateTime={m.createdAt}>{dateFmt(m.createdAt, lang)}</time>

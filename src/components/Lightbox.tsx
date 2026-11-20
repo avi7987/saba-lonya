@@ -179,7 +179,7 @@ function ImageLightbox({ photos, index, origin, onIndex, onClose }: { photos: Ph
       data-lenis-prevent
       className="fixed inset-0 z-[95] flex flex-col overflow-y-auto text-ivory lg:flex-row lg:overflow-hidden"
     >
-      <motion.div data-fade aria-hidden className="fixed inset-0 -z-10 bg-[#231a1d]" {...fadeIn} />
+      <motion.div data-fade aria-hidden className="fixed inset-0 -z-10 bg-[#161b26]" {...fadeIn} />
       {/* the picture */}
       <div className="relative flex shrink-0 flex-col lg:min-h-0 lg:flex-1">
         <motion.div data-fade {...fadeIn} className="flex items-center justify-between px-[var(--spacing-gutter)] pt-[max(0.75rem,env(safe-area-inset-top))]">

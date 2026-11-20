@@ -366,7 +366,7 @@ function Board({ fam, onOpen, onAdd, phone = false }: Props) {
   const btn = "flex h-10 w-10 items-center justify-center rounded-full text-burgundy hover:bg-blush/40 disabled:opacity-30";
   return (
     <div
-      className={full ? "family-map fixed inset-0 z-[75] overflow-hidden bg-[#fbf7f2]" : cn("family-map relative overflow-hidden rounded-[18px] border border-line bg-[#fbf7f2]", phone ? "h-[72svh] min-h-[28rem]" : "h-[min(78vh,52rem)] min-h-[32rem]")}
+      className={full ? "family-map fixed inset-0 z-[75] overflow-hidden bg-[#faf6ee]" : cn("family-map relative overflow-hidden rounded-[18px] border border-line bg-[#faf6ee]", phone ? "h-[72svh] min-h-[28rem]" : "h-[min(78vh,52rem)] min-h-[32rem]")}
       style={full ? { paddingTop: "env(safe-area-inset-top, 0px)" } : undefined}
       dir="ltr"
       role={full ? "dialog" : undefined}
@@ -400,7 +400,7 @@ function Board({ fam, onOpen, onAdd, phone = false }: Props) {
             ariaLabel={m.fit}
             nodeColor={(n) => (n.id === ROOT ? "var(--color-rose)" : n.type === "lines" ? "transparent" : "var(--color-rail)")}
             nodeStrokeWidth={0}
-            maskColor="rgba(248,242,237,0.7)"
+            maskColor="rgba(245,240,230,0.7)"
             style={{ width: 150, height: 96, borderRadius: 12, border: "1px solid var(--color-line)", background: "var(--color-paper)" }}
           />
         )}
@@ -426,7 +426,7 @@ function Board({ fam, onOpen, onAdd, phone = false }: Props) {
             className="h-11 w-full rounded-full border border-line bg-white/95 pe-4 ps-9 text-[0.95rem] shadow-[var(--shadow-paper)] outline-none focus:border-rose"
           />
           {qOpen && results.length > 0 && (
-            <ul id="family-search-list" role="listbox" className="absolute inset-x-0 top-full z-10 mt-1 rounded-xl bg-white p-1 shadow-[0_12px_28px_-8px_rgba(60,40,30,0.3)] ring-1 ring-charcoal/10">
+            <ul id="family-search-list" role="listbox" className="absolute inset-x-0 top-full z-10 mt-1 rounded-xl bg-white p-1 shadow-[0_12px_28px_-8px_rgba(25,32,52,0.3)] ring-1 ring-charcoal/10">
               {results.map((p) => (
                 <li key={p.id} role="option" aria-selected={false}>
                   <button type="button" onClick={() => pick(p.id)} className="flex min-h-11 w-full flex-col items-start justify-center rounded-lg px-3 text-start hover:bg-blush/30">
@@ -470,7 +470,7 @@ function Board({ fam, onOpen, onAdd, phone = false }: Props) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -4, scale: 0.98 }}
                   transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                  className="absolute end-0 top-full z-20 mt-1.5 min-w-[13rem] rounded-xl bg-white p-1 shadow-[0_12px_28px_-8px_rgba(60,40,30,0.3)] ring-1 ring-charcoal/10"
+                  className="absolute end-0 top-full z-20 mt-1.5 min-w-[13rem] rounded-xl bg-white p-1 shadow-[0_12px_28px_-8px_rgba(25,32,52,0.3)] ring-1 ring-charcoal/10"
                   onKeyDown={(e) => e.key === "Escape" && setDepthOpen(false)}
                 >
                   <li className="px-3 pb-1 pt-2 text-[0.78rem] text-ink-soft">{m.depthTitle}</li>

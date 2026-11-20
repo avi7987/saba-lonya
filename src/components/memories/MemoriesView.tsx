@@ -92,7 +92,7 @@ export default function MemoriesView() {
 
         {/* the chapters, always within reach */}
         <nav aria-label={p.jump} className="sticky top-[4.5rem] z-10 mx-[calc(50%-50vw)] mt-10 overflow-x-auto bg-ivory/85 px-[max(var(--spacing-gutter),calc(50vw-50%))] pb-5 pt-3 backdrop-blur-md [mask-image:linear-gradient(to_bottom,black_70%,transparent)] [scrollbar-width:none]">
-          <div className="inline-flex gap-1 whitespace-nowrap rounded-full bg-paper/95 p-1 shadow-[0_8px_20px_-14px_rgba(70,35,45,0.35)] ring-1 ring-line backdrop-blur-md">
+          <div className="inline-flex gap-1 whitespace-nowrap rounded-full bg-paper/95 p-1 shadow-[0_8px_20px_-14px_rgba(25,32,52,0.35)] ring-1 ring-line backdrop-blur-md">
             {MEM_KINDS.map((k) => (
               <button key={k} type="button" onClick={() => jump(k)} aria-current={here === k ? "true" : undefined} className={cn("relative min-h-10 rounded-full px-4 text-[0.92rem] transition-colors duration-300", here === k ? "text-burgundy" : "text-ink-soft hover:text-burgundy")}>
                 {here === k && <motion.span layoutId="mem-chapter" aria-hidden className="absolute inset-0 rounded-full bg-blush/70" style={{ borderRadius: 999 }} transition={{ type: "spring", visualDuration: 0.4, bounce: 0 }} />}

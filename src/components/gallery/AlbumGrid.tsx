@@ -114,7 +114,7 @@ function Print({ item, height, featured, repeat, place, onOpen }: { item: Item; 
         type="button"
         onClick={onOpen}
         aria-label={`${t.gallery.open}: ${full || l(p.alt)}, ${date}`}
-        className="group block w-full cursor-zoom-in bg-white p-[6px] pb-0 text-start shadow-[0_1px_2px_rgba(60,40,30,0.12),0_4px_12px_rgba(60,40,30,0.06)] transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(60,40,30,0.12),0_10px_24px_rgba(60,40,30,0.1)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-burgundy sm:p-[9px] sm:pb-0"
+        className="group block w-full cursor-zoom-in bg-white p-[6px] pb-0 text-start shadow-[0_1px_2px_rgba(25,32,52,0.12),0_4px_12px_rgba(25,32,52,0.06)] transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(25,32,52,0.12),0_10px_24px_rgba(25,32,52,0.1)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-burgundy sm:p-[9px] sm:pb-0"
         style={{ transform: tilt ? `rotate(${tilt}deg)` : undefined }}
       >
         {tape && <span aria-hidden className="absolute -top-2 left-1/2 z-10 h-4 w-14 -translate-x-1/2 -rotate-2 bg-[#eadcc0]/55" />}

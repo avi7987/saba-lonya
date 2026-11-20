@@ -247,7 +247,7 @@ export default function MemoryWall({ list }: { list: Memory[] }) {
   );
 }
 
-const TONES = ["bg-white", "bg-[#fbf3f1]", "bg-paper", "bg-[#fdf6ee]", "bg-white", "bg-[#f9f1f3]"];
+const TONES = ["bg-white", "bg-[#f7f1e6]", "bg-paper", "bg-[#fdf6ee]", "bg-white", "bg-[#f4efe6]"];
 
 /** one note on the wall: made for its shape, cut short with a soft fade, and opening the whole memory */
 function Note({ m, shape, tone }: { m: Memory; shape: Shape; tone: number }) {
@@ -255,10 +255,10 @@ function Note({ m, shape, tone }: { m: Memory; shape: Shape; tone: number }) {
   const k = memKind(m);
   const body = (m.lang !== lang && m.translation) || m.body || "";
   const href = `/memories#m-${m.id}`;
-  const card = "group relative flex h-full flex-col overflow-hidden rounded-[16px] border border-line shadow-[0_1px_2px_rgba(70,35,45,0.07),0_12px_26px_-16px_rgba(70,35,45,0.35)] transition-shadow duration-500 hover:shadow-[0_2px_4px_rgba(70,35,45,0.08),0_20px_38px_-18px_rgba(70,35,45,0.42)]";
+  const card = "group relative flex h-full flex-col overflow-hidden rounded-[16px] border border-line shadow-[0_1px_2px_rgba(25,32,52,0.07),0_12px_26px_-16px_rgba(25,32,52,0.35)] transition-shadow duration-500 hover:shadow-[0_2px_4px_rgba(25,32,52,0.08),0_20px_38px_-18px_rgba(25,32,52,0.42)]";
   const by = (
     <span className="mt-auto flex items-end justify-between gap-2 pt-2">
-      <span className="truncate font-hand text-[1.15rem] leading-tight text-[#a24a64]">{m.author}</span>
+      <span className="truncate font-hand text-[1.15rem] leading-tight text-[#8a6420]">{m.author}</span>
       {m.relation && <span className="shrink-0 truncate text-[0.75rem] text-ink-soft">{m.relation}</span>}
     </span>
   );
@@ -283,13 +283,13 @@ function Note({ m, shape, tone }: { m: Memory; shape: Shape; tone: number }) {
             <img src={m.photoSrc} alt="" aria-hidden loading="lazy" className="absolute inset-0 h-full w-full scale-125 object-cover opacity-55 blur-xl" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={m.photoSrc} alt="" loading="lazy" className="relative h-full w-full object-contain transition-transform duration-700 group-hover:scale-[1.02]" />
-            <div className="absolute bottom-2.5 start-2.5 max-w-[60%] rounded-[10px] bg-paper/95 px-3 py-2 shadow-[0_6px_18px_-8px_rgba(70,35,45,0.45)] ring-1 ring-line">
+            <div className="absolute bottom-2.5 start-2.5 max-w-[60%] rounded-[10px] bg-paper/95 px-3 py-2 shadow-[0_6px_18px_-8px_rgba(25,32,52,0.45)] ring-1 ring-line">
               {(m.title || body) && (
                 <p dir="auto" className="line-clamp-2 text-[0.92rem] leading-snug">
                   {m.title ? <span className="font-display text-[1.02rem] text-burgundy">{m.title}</span> : body}
                 </p>
               )}
-              <span className="block truncate font-hand text-[1.05rem] leading-tight text-[#a24a64]">{m.author}</span>
+              <span className="block truncate font-hand text-[1.05rem] leading-tight text-[#8a6420]">{m.author}</span>
             </div>
           </div>
           {open}
@@ -330,7 +330,7 @@ function Note({ m, shape, tone }: { m: Memory; shape: Shape; tone: number }) {
         {m.mediaKind === "audio" && m.mediaSrc && <AudioPlayer src={m.mediaSrc} title={m.title || m.author} className="mt-3" />}
         {m.mediaKind === "video" && m.mediaSrc && <video src={m.mediaSrc} controls playsInline preload="metadata" className="mt-3 min-h-0 w-full flex-1 rounded-[10px] bg-black object-contain" />}
         <span className="mt-auto flex items-end justify-between gap-2 pt-2">
-          <span className="truncate font-hand text-[1.15rem] leading-tight text-[#a24a64]">{m.author}</span>
+          <span className="truncate font-hand text-[1.15rem] leading-tight text-[#8a6420]">{m.author}</span>
           <TLink href={href} className="relative z-[2] shrink-0 text-[0.82rem] text-burgundy underline decoration-dusty/50 underline-offset-4">
             {t.memories.more}
           </TLink>
@@ -343,7 +343,7 @@ function Note({ m, shape, tone }: { m: Memory; shape: Shape; tone: number }) {
     const n = body.length;
     const size = shape === "big" ? (n < 60 ? "text-[2.2rem]" : "text-[1.7rem]") : n < 40 ? "text-[1.6rem]" : n < 90 ? "text-[1.3rem]" : "text-[1.1rem]";
     return (
-      <article className={cn(card, "bg-[#fbf0f2] p-4 sm:p-5")}>
+      <article className={cn(card, "bg-[#f3ead8] p-4 sm:p-5")}>
         <span aria-hidden className="-mb-4 -mt-2 font-display text-[3rem] leading-none text-rose/40">&ldquo;</span>
         <p dir="auto" className={cn("min-h-0 flex-1 overflow-hidden whitespace-pre-line font-display leading-[1.35] text-burgundy", size, fade)}>
           {body.trim()}
@@ -362,7 +362,7 @@ function Note({ m, shape, tone }: { m: Memory; shape: Shape; tone: number }) {
         card,
         TONES[tone],
         "p-4 sm:p-5",
-        recipe && "bg-[#fdf7ec] bg-[repeating-linear-gradient(to_bottom,transparent_0_27px,rgba(168,116,130,0.13)_27px_28px)]"
+        recipe && "bg-[#fdf7ec] bg-[repeating-linear-gradient(to_bottom,transparent_0_27px,rgba(168,140,90,0.13)_27px_28px)]"
       )}
     >
       {(recipe || letter) && (

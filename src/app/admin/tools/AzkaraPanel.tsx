@@ -106,7 +106,7 @@ export default function AzkaraPanel() {
   }, [auto, edited]);
   useEffect(() => {
     if (!origin) return;
-    QRCode.toDataURL(url, { width: 640, margin: 2, errorCorrectionLevel: "M", color: { dark: "#5e2338", light: "#ffffff" } })
+    QRCode.toDataURL(url, { width: 640, margin: 2, errorCorrectionLevel: "M", color: { dark: "#1a2540", light: "#ffffff" } })
       .then(setQr)
       .catch(() => setQr(""));
   }, [url, origin]);
@@ -131,10 +131,10 @@ export default function AzkaraPanel() {
     if (!w) return;
     w.document.write(`<!doctype html><html dir="rtl" lang="he"><head><meta charset="utf-8"><title>סבא לוניה · QR</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400&family=Heebo:wght@400&display=swap" rel="stylesheet">
-<style>@page{size:A5;margin:14mm}body{margin:0;font-family:Heebo,Arial,sans-serif;color:#3b2a2f;text-align:center}
+<style>@page{size:A5;margin:14mm}body{margin:0;font-family:Heebo,Arial,sans-serif;color:#22252d;text-align:center}
 .card{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:calc(100vh - 2px);gap:10px}
-h1{font-family:'Frank Ruhl Libre',serif;font-weight:300;font-size:34px;color:#762e49;margin:0}
-p{font-size:18px;margin:0;line-height:1.5}img{width:62mm;height:62mm;margin:8px 0}.u{font-size:13px;color:#8a6b74;direction:ltr}</style></head>
+h1{font-family:'Frank Ruhl Libre',serif;font-weight:300;font-size:34px;color:#1f2d4a;margin:0}
+p{font-size:18px;margin:0;line-height:1.5}img{width:62mm;height:62mm;margin:8px 0}.u{font-size:13px;color:#6b6e78;direction:ltr}</style></head>
 <body><div class="card"><h1>יש לכם זיכרון מסבא לוניה?</h1><p>תמונה, סיפור, שיר או משפט שלו.<br>סרקו והוסיפו לאתר שלה.</p><img src="${qr}" alt=""><p class="u">${url}</p></div>
 <script>window.onload=()=>setTimeout(()=>window.print(),400)</script></body></html>`);
     w.document.close();
@@ -195,7 +195,7 @@ p{font-size:18px;margin:0;line-height:1.5}img{width:62mm;height:62mm;margin:8px 
         <div className="flex flex-col gap-3">
           <label className={label}>
             ההודעה (אפשר לערוך)
-            <textarea value={text} onChange={(e) => (setText(e.target.value), setEdited(true))} rows={11} dir="rtl" className="w-full rounded-md border border-charcoal/20 bg-[#fbf8f4] p-3.5 leading-relaxed" />
+            <textarea value={text} onChange={(e) => (setText(e.target.value), setEdited(true))} rows={11} dir="rtl" className="w-full rounded-md border border-charcoal/20 bg-[#fbf8f1] p-3.5 leading-relaxed" />
           </label>
           {edited && (
             <button type="button" onClick={() => setEdited(false)} className="w-fit text-[0.88rem] text-ink-soft underline underline-offset-4 hover:text-burgundy">

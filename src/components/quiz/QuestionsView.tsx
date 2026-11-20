@@ -138,7 +138,7 @@ export default function QuestionsView() {
                 label={p.filter}
                 value={kind}
                 onChange={(k) => (setKind(k), openOne(null))}
-                className="flex-nowrap! whitespace-nowrap bg-paper/95 shadow-[0_8px_20px_-14px_rgba(70,35,45,0.35)] backdrop-blur-md"
+                className="flex-nowrap! whitespace-nowrap bg-paper/95 shadow-[0_8px_20px_-14px_rgba(25,32,52,0.35)] backdrop-blur-md"
                 options={kinds.map((k) => ({
                   id: k,
                   label: (
@@ -171,7 +171,7 @@ export default function QuestionsView() {
                       initial={{ opacity: 0, y: 14 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: Math.min(k, 10) * 0.04, ease: [0.22, 1, 0.36, 1], layout: { type: "spring", visualDuration: 0.4, bounce: 0.1 } }}
-                      className={cn(paper, "scroll-mt-24 overflow-hidden transition-shadow", open && "shadow-[0_22px_50px_-24px_rgba(70,35,45,0.45)] ring-1 ring-blush", done && !open && "opacity-75")}
+                      className={cn(paper, "scroll-mt-24 overflow-hidden transition-shadow", open && "shadow-[0_22px_50px_-24px_rgba(25,32,52,0.45)] ring-1 ring-blush", done && !open && "opacity-75")}
                     >
                       <button type="button" onClick={() => (open ? close(c.id) : openOne(c.id))} aria-expanded={open} aria-label={open ? p.fold : undefined} className="flex w-full items-center gap-4 p-3 text-start sm:p-4">
                         {photo ? (

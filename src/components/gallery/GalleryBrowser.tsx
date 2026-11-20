@@ -6,7 +6,7 @@ import { ArrowRight, ImagePlus } from "lucide-react";
 import type { Photo } from "@/content/types";
 import { useLang } from "@/lib/i18n";
 import { decadeLabel, decadeOf } from "@/lib/photoDate";
-import { RoseBud } from "../Botanical";
+import { Note } from "../Botanical";
 import { LanguageSwitcher } from "../Header";
 import { LightboxProvider, useLightbox } from "../Lightbox";
 import { TLink } from "../Transition";
@@ -130,7 +130,7 @@ function Browser() {
       <main id="content">
         <Container wide className="pb-36 pt-8 sm:pt-12">
           <div className="mx-auto flex max-w-2xl flex-col items-center gap-3 text-center">
-            <RoseBud className="h-10 w-7" still />
+            <Note className="h-10 w-7" still />
             <h1 className="font-display text-[clamp(2.1rem,5vw,3.6rem)] font-light leading-tight text-burgundy">{t.album.coverTitle}</h1>
             <p className="font-hand text-[1.05rem] leading-relaxed text-ink-soft sm:text-[1.15rem]">{t.album.coverLead}</p>
             {counts.all > 0 && KINDS.filter((k) => k !== "all" && counts[k] > 0).length > 1 && (
@@ -174,7 +174,7 @@ function Browser() {
         </Container>
         <TLink
           href="/share"
-          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-1/2 z-30 hidden min-h-12 -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-burgundy md:inline-flex px-6 text-[1rem] text-white shadow-[0_8px_24px_-6px_rgba(90,30,50,0.45)] transition-transform hover:-translate-y-0.5 sm:bottom-8 sm:left-auto sm:end-8 sm:translate-x-0"
+          className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] left-1/2 z-30 hidden min-h-12 -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-burgundy md:inline-flex px-6 text-[1rem] text-white shadow-[0_8px_24px_-6px_rgba(20,28,48,0.45)] transition-transform hover:-translate-y-0.5 sm:bottom-8 sm:left-auto sm:end-8 sm:translate-x-0"
         >
           <ImagePlus className="h-5 w-5" strokeWidth={1.6} aria-hidden />
           {t.album.add}

@@ -19,7 +19,7 @@ import PersonAvatar from "./PersonAvatar";
 import { useFamily } from "./useFamily";
 
 // the tree is drawn in the browser only (it measures the screen)
-const FamilyMap = dynamic(() => import("./FamilyMap"), { ssr: false, loading: () => <div className="h-[72svh] min-h-[28rem] rounded-[18px] border border-line bg-[#fbf7f2] md:h-[min(78vh,52rem)] md:min-h-[32rem]" /> });
+const FamilyMap = dynamic(() => import("./FamilyMap"), { ssr: false, loading: () => <div className="h-[72svh] min-h-[28rem] rounded-[18px] border border-line bg-[#faf6ee] md:h-[min(78vh,52rem)] md:min-h-[32rem]" /> });
 
 type Fam = ReturnType<typeof useFamily>;
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -268,7 +268,7 @@ export default function FamilyTree() {
         <SectionIntro id="family-title" eyebrow={t.family.eyebrow} title={t.family.title} lead={t.family.map.lead} layout="center" />
         <div className="mt-8 md:mt-12">
           {/* until the page knows whether this is a phone, the tree's room is kept, so nothing below it jumps */}
-          {wide === null && <div aria-hidden className="h-[72svh] min-h-[28rem] rounded-[18px] border border-line bg-[#fbf7f2] md:h-[min(78vh,52rem)] md:min-h-[32rem]" />}
+          {wide === null && <div aria-hidden className="h-[72svh] min-h-[28rem] rounded-[18px] border border-line bg-[#faf6ee] md:h-[min(78vh,52rem)] md:min-h-[32rem]" />}
           {wide !== null && <FamilyMap phone={!wide} fam={fam} onOpen={onOpen} onAdd={(id) => onAdd({ of: id })} />}
           {wide === false && <p className="mt-2.5 text-center text-[0.82rem] text-ink-soft">{t.family.map.hintTouch}</p>}
         </div>

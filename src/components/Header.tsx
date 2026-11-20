@@ -8,7 +8,7 @@ import { Menu, X } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import type { Lang } from "@/content/types";
 import { profile } from "@/content";
-import { RoseBud } from "./Botanical";
+import { Note } from "./Botanical";
 import { TLink, getLenis } from "./Transition";
 import SearchButton from "./Search";
 import { cn } from "./ui";
@@ -116,7 +116,7 @@ export default function Header() {
       >
         <div className="mx-auto flex h-[4.5rem] max-w-[96rem] items-center gap-6 px-[var(--spacing-gutter)]">
           <TLink href="/#top" className="flex items-center gap-2.5 text-burgundy">
-            <RoseBud className="h-8 w-6" still />
+            <Note className="h-8 w-6" still />
             <span className="font-display text-[1.35rem] leading-none">{l(profile.name)}</span>
           </TLink>
 
@@ -175,7 +175,7 @@ export default function Header() {
           >
             <div className="flex h-[4.5rem] items-center justify-between">
               <span className="flex items-center gap-2.5 text-burgundy">
-                <RoseBud className="h-8 w-6" still />
+                <Note className="h-8 w-6" still />
                 <span className="font-display text-[1.35rem]">{l(profile.name)}</span>
               </span>
               <button ref={closeRef} type="button" onClick={() => setOpen(false)} aria-label={t.nav.close} className="flex h-11 w-11 items-center justify-center text-burgundy">

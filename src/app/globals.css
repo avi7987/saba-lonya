@@ -1,9 +1,11 @@
 @import "tailwindcss";
 
 /*
-  ROOT design system.
-  Layout concept: an editorial family archive. Ivory paper, generous margins,
-  photographs mounted like an album, one botanical line drawing per chapter.
+  Grandpa Lonya's design system.
+  Layout concept: an editorial family archive. Warm cream paper, generous margins,
+  photographs mounted like an album, a line drawing of a saxophone with notes.
+  Colours: midnight blue and brass, like a jazz club. The token names (burgundy, rose, blush...)
+  are kept from the site this one grew from: burgundy is now the midnight blue, rose the brass.
 */
 :root {
   --font-frank: "Frank Ruhl Libre";
@@ -16,23 +18,23 @@
 
 @theme {
   /* palette (spec 3.1) */
-  --color-ivory: #f8f2ed;
-  --color-blush: #e8d4d3;
-  --color-dusty: #c77a91;
-  --color-rose: #b25671; /* deep enough for white text (4.7:1) */
-  --color-burgundy: #762e49;
-  --color-charcoal: #34272b;
-  /* the soft second colour (once a sage green; now a muted mauve, so the site has no green) */
-  --color-sage: #c9a9b3;
+  --color-ivory: #f5f0e6;
+  --color-blush: #e8dcc4;
+  --color-dusty: #b8975a;
+  --color-rose: #8c6a28; /* deep enough for white text (4.7:1) */
+  --color-burgundy: #1f2d4a;
+  --color-charcoal: #22252d;
+  /* the soft second colour: a warm grey (the site has no green) */
+  --color-sage: #b8ad97;
   --color-white: #ffffff;
-  /* derived neutrals, biased toward the rose hue */
-  --color-ink-soft: #6a575d;
-  --color-line: #e2d3cf;
-  --color-paper: #fcf8f4;
-  --color-mount: #efe6df;
-  --color-sage-deep: #7e5562; /* 5.6:1 on ivory */
+  /* derived neutrals, warm like old paper */
+  --color-ink-soft: #5b5e67;
+  --color-line: #e0d6c3;
+  --color-paper: #fbf8f1;
+  --color-mount: #ece4d4;
+  --color-sage-deep: #4a5672; /* 5.6:1 on ivory */
   /* the lines that join people in the family tree */
-  --color-rail: #d3b9b6;
+  --color-rail: #ccb995;
 
   /* typography: each Hebrew face is paired with a Cyrillic face of similar character */
   --font-display: var(--font-frank), var(--font-cormorant), "Times New Roman", serif;
@@ -46,9 +48,9 @@
   --radius-photo: 2px;
   --radius-card: 6px;
 
-  --shadow-print: 0 1px 2px rgba(52, 39, 43, 0.06), 0 12px 32px -18px rgba(52, 39, 43, 0.28);
-  --shadow-lift: 0 2px 4px rgba(52, 39, 43, 0.06), 0 24px 48px -24px rgba(52, 39, 43, 0.35);
-  --shadow-paper: 0 1px 1px rgba(52, 39, 43, 0.05), 0 8px 20px -12px rgba(52, 39, 43, 0.22);
+  --shadow-print: 0 1px 2px rgba(30, 34, 45, 0.06), 0 12px 32px -18px rgba(30, 34, 45, 0.28);
+  --shadow-lift: 0 2px 4px rgba(30, 34, 45, 0.06), 0 24px 48px -24px rgba(30, 34, 45, 0.35);
+  --shadow-paper: 0 1px 1px rgba(30, 34, 45, 0.05), 0 8px 20px -12px rgba(30, 34, 45, 0.22);
 
   --ease-gentle: cubic-bezier(0.22, 1, 0.36, 1);
 
@@ -126,7 +128,7 @@ p { text-wrap: pretty; }
   position: absolute;
   width: 22px;
   height: 22px;
-  border: 1px solid rgba(118, 46, 73, 0.28);
+  border: 1px solid rgba(31, 45, 74, 0.28);
   pointer-events: none;
   z-index: 2;
 }
@@ -136,13 +138,13 @@ p { text-wrap: pretty; }
 /* fold lines for letters */
 .folded {
   background-image:
-    linear-gradient(to bottom, transparent calc(33.3% - 1px), rgba(52, 39, 43, 0.06) 33.3%, transparent calc(33.3% + 1px)),
-    linear-gradient(to bottom, transparent calc(66.6% - 1px), rgba(52, 39, 43, 0.06) 66.6%, transparent calc(66.6% + 1px));
+    linear-gradient(to bottom, transparent calc(33.3% - 1px), rgba(30, 34, 45, 0.06) 33.3%, transparent calc(33.3% + 1px)),
+    linear-gradient(to bottom, transparent calc(66.6% - 1px), rgba(30, 34, 45, 0.06) 66.6%, transparent calc(66.6% + 1px));
 }
 
 /* ruled lines for handwritten notes */
 .ruled {
-  background-image: repeating-linear-gradient(to bottom, transparent 0 31px, rgba(199, 122, 145, 0.18) 31px 32px);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 31px, rgba(184, 151, 90, 0.18) 31px 32px);
 }
 
 html.lenis, html.lenis body { height: auto; }

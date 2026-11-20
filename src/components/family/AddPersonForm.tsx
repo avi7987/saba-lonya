@@ -10,7 +10,7 @@ import { useLang } from "@/lib/i18n";
 import { LIMITS } from "@/lib/limits";
 import { ease } from "@/lib/motion";
 import { nameScore } from "@/lib/names";
-import { RoseBud } from "../Botanical";
+import { Note } from "../Botanical";
 import { STATIC, getLenis } from "../Transition";
 import { buttonClass, cn } from "../ui";
 import PersonCard from "./PersonCard";
@@ -22,7 +22,7 @@ type Fam = ReturnType<typeof useFamily>;
 export type AddPreset = { of?: string; replaces?: string };
 
 const input =
-  "w-full rounded-[var(--radius-card)] border border-charcoal/15 bg-white px-4 py-3 text-[1rem] text-charcoal outline-none transition-[border-color,box-shadow] placeholder:text-charcoal/35 focus:border-rose focus:shadow-[0_0_0_3px_rgba(184,92,120,0.15)] aria-[invalid=true]:border-burgundy";
+  "w-full rounded-[var(--radius-card)] border border-charcoal/15 bg-white px-4 py-3 text-[1rem] text-charcoal outline-none transition-[border-color,box-shadow] placeholder:text-charcoal/35 focus:border-rose focus:shadow-[0_0_0_3px_rgba(140,106,40,0.15)] aria-[invalid=true]:border-burgundy";
 const chip = (on: boolean) => cn("inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-[0.95rem] transition-colors", on ? "border-burgundy bg-burgundy text-white" : "border-charcoal/15 bg-white text-charcoal hover:border-burgundy/40");
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const RELS: { id: LinkRel; Icon: typeof Baby }[] = [
@@ -321,7 +321,7 @@ export default function AddPersonForm({ fam, preset, onClose }: { fam: Fam; pres
     return (
       <div className="flex flex-col gap-5">
         <h3 className="font-display text-[1.6rem] font-light text-burgundy">{w.review}</h3>
-        <div className="flex flex-wrap items-center justify-center gap-3 rounded-[16px] bg-[#fbf7f2] p-4 ring-1 ring-line">
+        <div className="flex flex-wrap items-center justify-center gap-3 rounded-[16px] bg-[#faf6ee] p-4 ring-1 ring-line">
           <PersonCard person={draft} name={name} relation={editing ? fam.relLabel(editing) : undefined} onOpen={() => setStep(2)} />
           {!editing && of && (
             <p className="max-w-[16rem] text-center text-[0.95rem] text-charcoal">
@@ -362,7 +362,7 @@ export default function AddPersonForm({ fam, preset, onClose }: { fam: Fam; pres
       >
         <div className="flex items-center justify-between px-6 pb-2 pt-4 sm:px-8">
           <h2 id={`${uid}-title`} className="flex items-center gap-3 font-display text-[1.5rem] font-light text-burgundy">
-            <RoseBud className="h-8 w-6" still />
+            <Note className="h-8 w-6" still />
             {editing ? t.family.edit : f.title}
           </h2>
           <button ref={closeRef} type="button" onClick={onClose} aria-label={t.family.close} className="flex h-11 w-11 items-center justify-center rounded-full text-burgundy hover:bg-blush/50">

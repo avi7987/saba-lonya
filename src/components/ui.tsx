@@ -102,7 +102,7 @@ const btnBase =
   "inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-7 text-[0.98rem] font-medium transition-[background-color,color,box-shadow,transform] duration-300 ease-[var(--ease-gentle)] hover:-translate-y-0.5 active:translate-y-0";
 
 export const buttonClass = {
-  primary: cn(btnBase, "bg-rose text-white shadow-[0_10px_24px_-14px_rgba(118,46,73,0.8)] hover:bg-burgundy"),
+  primary: cn(btnBase, "bg-rose text-white shadow-[0_10px_24px_-14px_rgba(31,45,74,0.8)] hover:bg-burgundy"),
   secondary: cn(btnBase, "border border-burgundy/25 text-burgundy hover:border-burgundy/50 hover:bg-white/60"),
   quiet: "inline-flex items-center gap-2 text-burgundy underline decoration-dusty/50 decoration-1 underline-offset-[6px] transition-colors hover:decoration-burgundy",
 };
@@ -111,7 +111,7 @@ export const buttonClass = {
 /* ---------- the Living Album's shared pieces ---------- */
 
 /** a sheet of album paper: the same soft, rose-tinted card as the people in the family tree */
-export const paper = "rounded-[18px] border border-line bg-paper shadow-[0_1px_2px_rgba(70,35,45,0.07),0_10px_24px_-14px_rgba(70,35,45,0.3)]";
+export const paper = "rounded-[18px] border border-line bg-paper shadow-[0_1px_2px_rgba(25,32,52,0.07),0_10px_24px_-14px_rgba(25,32,52,0.3)]";
 
 /** a small soft label, like the relation under a name in the tree */
 export function Pill({ children, className }: { children: ReactNode; className?: string }) {
@@ -137,7 +137,7 @@ export function DecadeMark({ year, title, count, as: Tag = "h2", id, className, 
   const reduce = useReducedMotion();
   return (
     <div className={cn("flex items-end gap-4 sm:gap-6", className)}>
-      {year !== undefined && <span aria-hidden className="font-display text-[clamp(2.6rem,6vw,4.6rem)] leading-[0.8] tabular-nums text-[#a87482]">{year}</span>}
+      {year !== undefined && <span aria-hidden className="font-display text-[clamp(2.6rem,6vw,4.6rem)] leading-[0.8] tabular-nums text-[#9c8250]">{year}</span>}
       <div className="flex min-w-0 flex-1 flex-col gap-2 pb-1">
         <div className="flex items-baseline justify-between gap-3">
           <Tag id={id} className={quiet ? "sr-only" : "font-display text-[clamp(1.45rem,2.6vw,1.9rem)] font-normal leading-tight text-burgundy"}>

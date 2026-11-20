@@ -14,10 +14,10 @@ const num = (n: number) => n.toLocaleString("he-IL");
 
 // one color per kind, from the site's own rose and burgundy
 const PARTS: { key: keyof Report["kinds"]; label: string; unit: string; color: string }[] = [
-  { key: "image", label: "תמונות", unit: "תמונות", color: "#b5566f" },
-  { key: "video", label: "סרטונים", unit: "סרטונים", color: "#762e49" },
-  { key: "audio", label: "הקלטות", unit: "הקלטות", color: "#c98a9b" },
-  { key: "extra", label: "תצוגות מקדימות ופסקולים", unit: "קבצים", color: "#e3bcc6" },
+  { key: "image", label: "תמונות", unit: "תמונות", color: "#8c6a28" },
+  { key: "video", label: "סרטונים", unit: "סרטונים", color: "#1f2d4a" },
+  { key: "audio", label: "הקלטות", unit: "הקלטות", color: "#c2a46a" },
+  { key: "extra", label: "תצוגות מקדימות ופסקולים", unit: "קבצים", color: "#e3d2ae" },
 ];
 
 /** How much room is used and left for new photos, videos and recordings, against the cap that keeps the site free. */

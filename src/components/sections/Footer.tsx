@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import { profile } from "@/content";
 import { useLang } from "@/lib/i18n";
 import { ease } from "@/lib/motion";
-import { RoseTop } from "../Botanical";
+import { Notes } from "../Botanical";
 import { LanguageSwitcher } from "../Header";
 import { TLink } from "../Transition";
 import { Container } from "../ui";
@@ -21,7 +21,7 @@ export default function Footer() {
   return (
     <footer className="pb-[max(2.5rem,env(safe-area-inset-bottom))] pt-[var(--spacing-section)]">
       <Container className="flex flex-col items-center text-center">
-        <RoseTop className="h-28 w-28" />
+        <Notes className="h-28 w-28" />
         <motion.p
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}

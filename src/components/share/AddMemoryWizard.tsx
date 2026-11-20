@@ -8,7 +8,7 @@ import { ACCEPT, LIMITS, PICK_MB, SEND_MB, kindOf } from "@/lib/limits";
 import { ease } from "@/lib/motion";
 import { prepare, shrinkImage, shrinkVideo, type Prepared } from "@/lib/mediaPrep";
 import { decadeLabel, formatDate } from "@/lib/photoDate";
-import { RoseTop } from "../Botanical";
+import { Notes } from "../Botanical";
 import { STATIC, TLink } from "../Transition";
 import { buttonClass, cn } from "../ui";
 import PeoplePicker, { refreshNames, usePeople } from "../people/PeoplePicker";
@@ -44,9 +44,9 @@ const blocked = (f: Picked) => f.dup === "local" || (!!f.dup && f.dup.match === 
 const acceptFor = (t: MType | null) => (t === "video" ? ACCEPT.video : t === "audio" ? ACCEPT.audio : ACCEPT.image).join(",");
 
 const input =
-  "w-full rounded-[var(--radius-card)] border border-charcoal/15 bg-white px-4 py-3.5 text-[1.05rem] text-charcoal outline-none transition-[border-color,box-shadow] placeholder:text-charcoal/35 focus:border-rose focus:shadow-[0_0_0_3px_rgba(184,92,120,0.15)] aria-[invalid=true]:border-burgundy";
+  "w-full rounded-[var(--radius-card)] border border-charcoal/15 bg-white px-4 py-3.5 text-[1.05rem] text-charcoal outline-none transition-[border-color,box-shadow] placeholder:text-charcoal/35 focus:border-rose focus:shadow-[0_0_0_3px_rgba(140,106,40,0.15)] aria-[invalid=true]:border-burgundy";
 const bigBtn =
-  "inline-flex min-h-14 items-center justify-center gap-2.5 rounded-[var(--radius-card)] border border-burgundy/20 bg-white px-5 text-[1.02rem] text-burgundy shadow-[0_1px_2px_rgba(60,40,30,0.06)] transition-colors hover:border-burgundy/50 hover:bg-blush/20";
+  "inline-flex min-h-14 items-center justify-center gap-2.5 rounded-[var(--radius-card)] border border-burgundy/20 bg-white px-5 text-[1.02rem] text-burgundy shadow-[0_1px_2px_rgba(25,32,52,0.06)] transition-colors hover:border-burgundy/50 hover:bg-blush/20";
 
 /**
  * An exact date as three plain fields: day, month by name, year. (The browser's own date box
@@ -432,7 +432,7 @@ export default function AddMemoryWizard() {
   if (state === "done")
     return (
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease }} className="flex flex-col items-center gap-5 py-10 text-center" role="status">
-        <RoseTop className="h-24 w-24" />
+        <Notes className="h-24 w-24" />
         <h2 className="font-display text-[clamp(2rem,4vw,2.8rem)] font-light text-burgundy">{type === "info" ? s.doneInfoTitle : s.doneTitle}</h2>
         <p className="max-w-md text-lg text-ink-soft">{type === "info" ? s.doneInfo : type === "words" ? s.doneWords : s.doneLead}</p>
         {STATIC && <p className="max-w-md text-[0.88rem] text-rose">{s.demoNote}</p>}
@@ -625,8 +625,8 @@ export default function AddMemoryWizard() {
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", visualDuration: 0.3, bounce: 0 }}
                 className={cn(
-                  "group flex min-h-[8.5rem] flex-col items-start justify-between gap-3 rounded-[16px] border bg-paper p-4 text-start shadow-[0_1px_2px_rgba(70,35,45,0.07),0_10px_24px_-14px_rgba(70,35,45,0.3)] transition-[border-color,box-shadow] duration-300 hover:border-rose/40 hover:shadow-[0_2px_4px_rgba(70,35,45,0.08),0_16px_30px_-14px_rgba(70,35,45,0.34)] sm:p-5",
-                  type === id ? "border-rose shadow-[0_0_0_3px_var(--color-rose),0_10px_24px_-14px_rgba(70,35,45,0.3)]" : "border-line"
+                  "group flex min-h-[8.5rem] flex-col items-start justify-between gap-3 rounded-[16px] border bg-paper p-4 text-start shadow-[0_1px_2px_rgba(25,32,52,0.07),0_10px_24px_-14px_rgba(25,32,52,0.3)] transition-[border-color,box-shadow] duration-300 hover:border-rose/40 hover:shadow-[0_2px_4px_rgba(25,32,52,0.08),0_16px_30px_-14px_rgba(25,32,52,0.34)] sm:p-5",
+                  type === id ? "border-rose shadow-[0_0_0_3px_var(--color-rose),0_10px_24px_-14px_rgba(25,32,52,0.3)]" : "border-line"
                 )}
               >
                 <span className="flex h-11 w-11 items-center justify-center rounded-full bg-blush/50 text-burgundy transition-[transform,background-color] duration-300 group-hover:scale-110 group-hover:bg-blush">
@@ -759,7 +759,7 @@ export default function AddMemoryWizard() {
         </div>
 
         {/* what it will look like */}
-        <section aria-label={w.preview} className="flex flex-col gap-4 rounded-[4px] bg-white p-4 shadow-[0_1px_2px_rgba(60,40,30,0.1),0_8px_24px_-8px_rgba(60,40,30,0.12)] sm:p-6">
+        <section aria-label={w.preview} className="flex flex-col gap-4 rounded-[4px] bg-white p-4 shadow-[0_1px_2px_rgba(25,32,52,0.1),0_8px_24px_-8px_rgba(25,32,52,0.12)] sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-2 text-[0.85rem] text-ink-soft">
             <span>{type ? w.types[type][0] : ""}</span>
             <button type="button" onClick={() => setStep(1)} className={cn(buttonClass.quiet, "min-h-10 text-[0.9rem]")}>

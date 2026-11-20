@@ -198,7 +198,7 @@ export default function BulkUpload() {
     if (x.status === "sending") return st.sending(Math.round(x.progress * 100));
     return st[x.status] as string;
   };
-  const field = "w-full rounded-[var(--radius-card)] border border-charcoal/15 bg-white px-4 py-3.5 text-[1.05rem] text-charcoal outline-none focus:border-rose focus:shadow-[0_0_0_3px_rgba(184,92,120,0.15)] aria-[invalid=true]:border-burgundy";
+  const field = "w-full rounded-[var(--radius-card)] border border-charcoal/15 bg-white px-4 py-3.5 text-[1.05rem] text-charcoal outline-none focus:border-rose focus:shadow-[0_0_0_3px_rgba(140,106,40,0.15)] aria-[invalid=true]:border-burgundy";
 
   return (
     <div className="flex flex-col gap-7">
