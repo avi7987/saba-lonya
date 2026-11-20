@@ -1,0 +1,47 @@
+{
+  "name": "savta-roza",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "opennextjs-cloudflare build",
+    "start": "next start",
+    "lint": "eslint",
+    "build:next": "next build",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
+  },
+  "dependencies": {
+    "@fontsource/caveat": "^5.3.0",
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/frank-ruhl-libre": "^5.3.0",
+    "@fontsource/heebo": "^5.3.0",
+    "@fontsource/playpen-sans-hebrew": "^5.3.0",
+    "@fontsource/roboto": "^5.3.0",
+    "@opennextjs/cloudflare": "^1.20.16",
+    "@xyflow/react": "^12.12.0",
+    "clsx": "^2.1.1",
+    "lenis": "^1.3.27",
+    "lucide-react": "^1.72.0",
+    "mediabunny": "1.65.0",
+    "motion": "^14.12.0",
+    "next": "15.5.29",
+    "qrcode": "^1.5.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "server-only": "^0.0.1",
+    "tailwind-merge": "^3.7.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.29",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "wrangler": "^4.160.1"
+  }
+}

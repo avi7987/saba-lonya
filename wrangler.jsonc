@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "saba-lonya",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  // memories and family-tree requests (the tables are created by the site itself on first use)
+  "d1_databases": [{ "binding": "DB", "database_name": "saba-lonya", "database_id": "d8b517c4-0c08-4424-aaf1-b1c43eea44e9", "migrations_dir": "migrations" }],
+  // uploaded photos, videos and recordings
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "saba-lonya-files" }],
+  // vision model that estimates when old photos were taken, and the voice that answers questions
+  "ai": { "binding": "AI" },
+  "observability": { "enabled": true },
+  // branch previews use the family's real memories and photos, so a new design can be judged
+  // with the real content. Anything added there is real.
+  "previews": {
+    "d1_databases": [{ "binding": "DB", "database_id": "d8b517c4-0c08-4424-aaf1-b1c43eea44e9" }],
+    "r2_buckets": [{ "binding": "FILES", "bucket_name": "saba-lonya-files" }],
+    "ai": { "binding": "AI" }
+  }
+}

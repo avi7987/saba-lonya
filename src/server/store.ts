@@ -1,0 +1,236 @@
+import "server-only";
+
+/**
+ * Where submissions live. In production (Cloudflare) records go to D1 and files to R2;
+ * in development they go to the local data/ folder. Both sit behind the same interface,
+ * so the API routes do not change.
+ */
+
+export type Status = "pending" | "approved" | "rejected";
+
+import type { PhotoDate } from "@/lib/photoDate";
+import type { CategoryId } from "@/content/types";
+
+export type StoredFile = {
+  name: string;
+  kind: "image" | "video" | "audio";
+  size: number;
+  /** a small JPEG preview stored next to the original */
+  thumb?: string;
+  thumbSize?: number;
+  /** a video's soundtrack, taken out in the browser (mono WAV), so what is said can be written down */
+  sound?: string;
+  soundSize?: number;
+  width?: number;
+  height?: number;
+  /** when it was taken, and how we know */
+  date?: PhotoDate;
+  category?: CategoryId;
+  /** fingerprints for recognising the same photo twice (see lib/dedupe) */
+  sha?: string;
+  phash?: string;
+  /** someone asked the owner to remove this file */
+  deleteRequest?: DeleteRequest;
+  /** last time the date estimate was tried (so it is retried later, not on every visit) */
+  aiTriedAt?: string;
+  /** family members tagged in this photo (ids in the family tree) */
+  people?: string[];
+  /** what family members told us about this photo ("tell us more") */
+  notes?: FileNote[];
+};
+
+/** One family member's answer to "tell us more about this photo". Human-provided, attributed, never merged silently. */
+/** was: the date the photo had before someone corrected it, kept so the change can be seen and undone */
+export type FileNote = { at: string; by?: string; people?: string[]; who?: string; when?: string; was?: string; place?: string; what?: string };
+
+export type DeleteRequest = { at: string; reason?: string; by?: string };
+
+export type Base = { id: string; status: Status; files: StoredFile[]; createdAt: string; reviewedAt?: string };
+
+/** what kind of thing was shared, as chosen in the "add a memory" steps */
+/** "words": things she used to say (also used for answers in her voice) */
+export type MemoryType = "photos" | "video" | "audio" | "story" | "letter" | "recipe" | "words";
+export const MEMORY_TYPES: MemoryType[] = ["photos", "video", "audio", "story", "letter", "recipe", "words"];
+
+export type StoredMemory = Base & {
+  type?: MemoryType;
+  author: string;
+  relation?: string;
+  title?: string;
+  body: string;
+  lang: "he" | "ru";
+  /** family-tree ids of the people in the attached photos */
+  people?: string[];
+  /** someone asked the owner to remove this whole memory */
+  deleteRequest?: DeleteRequest;
+};
+
+/** A family-tree request as submitted (see FamilyRequest in lib/family). */
+export type StoredPerson = Base & {
+  kind?: "child" | "grandchild" | "great" | "partner" | "sibling" | "parent";
+  replaces?: string;
+  name: string;
+  nameAlt?: string;
+  gender: "f" | "m" | "x";
+  born?: string;
+  birthplace?: string;
+  about?: string;
+  parentId?: string;
+  parentName?: string;
+  parentGender?: "f" | "m" | "x";
+  grandparentId?: string;
+  grandparentName?: string;
+  grandparentGender?: "f" | "m" | "x";
+  partnerOf?: string;
+  /** the general way: relation to any person in the tree (see lib/family LinkRel) */
+  rel?: "child" | "partner" | "parent" | "sibling";
+  of?: string;
+  with?: string;
+  died?: string;
+};
+
+export type NewFile = {
+  data: Uint8Array;
+  ext: string;
+  kind: StoredFile["kind"];
+  thumb?: Uint8Array;
+  sound?: Uint8Array;
+  width?: number;
+  height?: number;
+  date?: PhotoDate;
+  category?: CategoryId;
+  sha?: string;
+  phash?: string;
+};
+
+export interface Store<T extends Base> {
+  create(fields: Omit<T, keyof Base>, files: NewFile[], status?: Status): Promise<T>;
+  /** delete one file of a record (and its preview); returns the bytes freed */
+  removeFile(id: string, name: string): Promise<number>;
+  list(status?: Status): Promise<T[]>;
+  get(id: string): Promise<T | undefined>;
+  setStatus(id: string, status: Status): Promise<T | undefined>;
+  /** change a record (e.g. a photo's date after it was estimated) */
+  update(id: string, change: (cur: T) => T): Promise<T | undefined>;
+  /** store one more file for a record (e.g. a preview made later); returns its generated name */
+  putFile(id: string, data: Uint8Array, ext: string): Promise<string>;
+  readFile(id: string, name: string): Promise<Uint8Array | undefined>;
+  /** delete a record's files (e.g. after it was rejected); returns the bytes freed */
+  removeFiles(id: string): Promise<number>;
+  /** total bytes of files this collection keeps */
+  usedBytes(): Promise<number>;
+  /** small key/value notes (e.g. when an alert was last sent) */
+  getMeta(key: string): Promise<string | undefined>;
+  setMeta(key: string, value: string): Promise<void>;
+}
+
+
+/**
+ * The site's two tables (the same as migrations/), made on first use if the database is new, so a
+ * fresh database needs nothing done by hand. Checked once per running copy of the site.
+ */
+let made: Promise<void> | null = null;
+function tables(db: D1Like) {
+  made ??= (async () => {
+    await db.prepare("CREATE TABLE IF NOT EXISTS records (collection TEXT NOT NULL, id TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL, data TEXT NOT NULL, PRIMARY KEY (collection, id))").bind().run();
+    await db.prepare("CREATE INDEX IF NOT EXISTS records_by_status ON records (collection, status, created_at)").bind().run();
+    await db.prepare("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)").bind().run();
+  })().catch((e) => {
+    made = null;
+    throw e;
+  });
+  return made;
+}
+
+async function backend<T extends Base>(collection: string): Promise<Store<T>> {
+  try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    const { env } = await getCloudflareContext({ async: true });
+    const e = env as unknown as { DB?: D1Like; FILES?: R2Like };
+    if (e.DB && e.FILES) {
+      // a failure here must not fall back to local files: the queries that follow will say what is wrong
+      await tables(e.DB).catch((err) => console.error("[db] could not make the tables", err));
+      const { cloudStore } = await import("./cloudStore");
+      return cloudStore<T>(collection, e.DB, e.FILES);
+    }
+  } catch {
+    /* not running on Cloudflare */
+  }
+  const { fileStore } = await import("./fileStore");
+  return fileStore<T>(collection);
+}
+
+/** A store whose backend is chosen on first use. */
+function lazy<T extends Base>(collection: string): Store<T> {
+  let p: Promise<Store<T>> | null = null;
+  const b = () => (p ??= backend<T>(collection));
+  return {
+    create: async (f, files, s) => (await b()).create(f, files, s),
+    removeFile: async (id, n) => (await b()).removeFile(id, n),
+    list: async (s) => (await b()).list(s),
+    get: async (id) => (await b()).get(id),
+    setStatus: async (id, s) => (await b()).setStatus(id, s),
+    update: async (id, c) => (await b()).update(id, c),
+    putFile: async (id, d, e) => (await b()).putFile(id, d, e),
+    readFile: async (id, name) => (await b()).readFile(id, name),
+    removeFiles: async (id) => (await b()).removeFiles(id),
+    usedBytes: async () => (await b()).usedBytes(),
+    getMeta: async (k) => (await b()).getMeta(k),
+    setMeta: async (k, v) => (await b()).setMeta(k, v),
+  };
+}
+
+/* minimal shapes of the Cloudflare bindings we use */
+export type D1Like = {
+  prepare(sql: string): { bind(...v: unknown[]): { run(): Promise<unknown>; first<R>(): Promise<R | null>; all<R>(): Promise<{ results: R[] }> } };
+};
+export type R2Like = {
+  put(key: string, value: Uint8Array, opts?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
+  get(key: string): Promise<{ arrayBuffer(): Promise<ArrayBuffer> } | null>;
+  delete(keys: string | string[]): Promise<void>;
+};
+
+export const store: Store<StoredMemory> = lazy<StoredMemory>("memories");
+export const familyStore: Store<StoredPerson> = lazy<StoredPerson>("family");
+
+/* ---------- what the site learns from the archive (see server/knowledge) ---------- */
+
+/** text read out of a file: a letter's words (ocr) or what is said in a recording (transcript) */
+export type StoredText = Base & { memoryId: string; file?: string; source: "ocr" | "transcript"; text: string; model?: string };
+
+/** "family": a family member told it directly ("tell me"), quote = the question it answers, by = their name */
+export type FactSource = { memoryId: string; file?: string; kind: "memory" | "note" | "ocr" | "transcript" | "owner" | "family"; quote?: string; by?: string };
+/**
+ * One thing known about Rosa's life. status: pending = a suggestion (found by the computer or a
+ * visitor, not checked), approved = verified by the site's owner, rejected = wrong.
+ */
+export type StoredFact = Base & {
+  statement: string;
+  statementRu?: string;
+  category: "origin" | "family" | "home" | "work" | "events" | "traits" | "food" | "other";
+  year?: number;
+  place?: string;
+  people?: string[];
+  sources: FactSource[];
+  by: "ai" | "owner" | "family";
+};
+
+/** a piece of the archive in "meaning space" (an embedding), so search can find it by sense, not only by words */
+export type StoredVector = Base & { kind: "memory" | "note" | "ocr" | "transcript" | "fact"; memoryId?: string; file?: string; factId?: string; text: string; vec: string };
+
+/** background work waiting to be done. status: pending = to do, approved = done, rejected = gave up */
+export type StoredJob = Base & { type: "ocr" | "transcribe" | "facts" | "index"; memoryId: string; file?: string; attempts: number; error?: string };
+
+/** People named in photos and memories who are not (yet) in the family tree: one shared list. */
+export type StoredName = Base & { name: string; addedBy?: string };
+export const namesStore: Store<StoredName> = lazy<StoredName>("names");
+export const textStore: Store<StoredText> = lazy<StoredText>("texts");
+export const factStore: Store<StoredFact> = lazy<StoredFact>("facts");
+export const jobStore: Store<StoredJob> = lazy<StoredJob>("jobs");
+export const vectorStore: Store<StoredVector> = lazy<StoredVector>("vectors");
+
+/** bytes used by every uploaded file, across memories and the family tree */
+export async function storageUsed() {
+  const [a, b] = await Promise.all([store.usedBytes(), familyStore.usedBytes()]);
+  return a + b;
+}
