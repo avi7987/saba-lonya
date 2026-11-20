@@ -1,4 +1,4 @@
-import { ROSA } from "@/content/family";
+import { ROOT } from "@/content/family";
 import type { FamilyGraph } from "./family";
 
 /*
@@ -133,15 +133,15 @@ export function layoutFamily(g: FamilyGraph, o: LayoutOptions): FamilyLayout {
   };
 
   // the top of Rosa's line: her parents if anyone is known there (or her siblings need them)
-  const rosaParents = g.parentsOf(ROSA);
-  const rootUsed = rosaParents.length > 0 && (rosaParents.some((p) => !isVirtual(p)) || g.siblingsOf(ROSA).length > 0);
+  const rosaParents = g.parentsOf(ROOT);
+  const rootUsed = rosaParents.length > 0 && (rosaParents.some((p) => !isVirtual(p)) || g.siblingsOf(ROOT).length > 0);
   const taken = new Set<string>();
   if (rootUsed) {
     // Rosa's parents stand as one couple even if nobody linked them as partners
     const [first, ...others] = rosaParents;
     extraPartners.set(first, others);
     place(first, 0, taken);
-  } else place(ROSA, 0, taken);
+  } else place(ROOT, 0, taken);
 
   /* ---------- everyone else: next to their relatives, in free space ---------- */
 

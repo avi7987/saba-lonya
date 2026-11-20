@@ -165,7 +165,7 @@ export default function AddPersonForm({ fam, preset, onClose }: { fam: Fam; pres
                   <PersonAvatar person={p} label={fam.nameOf(p.id)} className="w-10 text-[0.8rem]" />
                   <span className="flex flex-col leading-tight">
                     <span>{cap(fam.nameOf(p.id))}</span>
-                    {p.id !== "rosa" && <span className="text-[0.8rem] text-ink-soft">{fam.relLabel(p.id)}</span>}
+                    {p.id !== "lonya" && <span className="text-[0.8rem] text-ink-soft">{fam.relLabel(p.id)}</span>}
                   </span>
                 </button>
               </li>

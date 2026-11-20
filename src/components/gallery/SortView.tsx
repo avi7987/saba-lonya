@@ -16,7 +16,7 @@ import { refreshPhotos, usePhotos } from "./usePhotos";
 type Filter = "undated" | "untagged" | "all";
 const NAME = "roza-my-name";
 const undated = (p: Photo) => !p.when || p.when.source === "ai";
-const untagged = (p: Photo) => !(p.people ?? []).some((x) => x !== "rosa");
+const untagged = (p: Photo) => !(p.people ?? []).some((x) => x !== "lonya");
 
 /**
  * After a big upload: many photos without details. Pick several, then give them a decade (or a year)

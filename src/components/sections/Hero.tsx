@@ -74,7 +74,7 @@ export default function Hero() {
               />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/images/rosa-portrait.webp"
+                src="/images/portrait.webp"
                 alt={t.hero.portraitAlt}
                 width={900}
                 height={862}

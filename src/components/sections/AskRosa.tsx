@@ -101,7 +101,7 @@ export default function AskRosa() {
   };
   const face = (size: string) => (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src="/images/rosa-avatar.webp" alt="" className={`${size} shrink-0 rounded-full bg-blush object-cover ring-4 ring-white shadow-[0_8px_24px_-10px_rgba(118,46,73,0.45)]`} />
+    <img src="/images/avatar.webp" alt="" className={`${size} shrink-0 rounded-full bg-blush object-cover ring-4 ring-white shadow-[0_8px_24px_-10px_rgba(118,46,73,0.45)]`} />
   );
 
   return (

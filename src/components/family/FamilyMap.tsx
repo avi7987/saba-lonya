@@ -6,7 +6,7 @@ import { MiniMap, ReactFlow, ReactFlowProvider, useReactFlow, type Node, type No
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { Check, Expand, Layers, Maximize2, Minus, Plus, RotateCcw, Search, X } from "lucide-react";
-import { ROSA } from "@/content/family";
+import { ROOT } from "@/content/family";
 import { chainToRosa } from "@/lib/family";
 import { layoutFamily, type FamilyLayout } from "@/lib/familyLayout";
 import { useLang } from "@/lib/i18n";
@@ -67,7 +67,7 @@ const LinesNode = memo(function LinesNode({ data }: NodeProps<Node<LinesData>>) 
   };
   // how many steps from Rosa a line starts, so the way to the chosen person is drawn from her outward
   const fromRosa = new Map(path.map((p, i) => [p, i]));
-  const rosaAt = fromRosa.get(ROSA) ?? 0;
+  const rosaAt = fromRosa.get(ROOT) ?? 0;
   const stepOf = (people: string[]) => Math.min(...people.filter((p) => fromRosa.has(p)).map((p) => Math.abs(fromRosa.get(p)! - rosaAt)));
   const w = layout.width + BAND;
   const x0 = rtl ? 0 : -BAND;
@@ -306,7 +306,7 @@ function Board({ fam, onOpen, onAdd, phone = false }: Props) {
           state: !lit ? "normal" : c.id === selected ? "selected" : path.includes(c.id) ? "path" : lit.has(c.id) ? "lit" : "dim",
           onOpen: open,
           onAdd,
-          fold: hasKids && c.id !== ROSA ? { folded: collapsed.has(c.id), hidden: c.hidden, toggle: () => toggle(c.id) } : undefined,
+          fold: hasKids && c.id !== ROOT ? { folded: collapsed.has(c.id), hidden: c.hidden, toggle: () => toggle(c.id) } : undefined,
           appear: appear.get(c.id),
           leave: leaving.get(c.id),
         } satisfies PersonData,
@@ -332,7 +332,7 @@ function Board({ fam, onOpen, onAdd, phone = false }: Props) {
     if (!box) return;
     ready.current = true;
     const fit = Math.min(1, (box.width * 0.9) / (layout.width + BAND), (box.height * 0.85) / layout.height);
-    const rosa = at.get(ROSA);
+    const rosa = at.get(ROOT);
     if (fit >= (phone ? 0.5 : 0.55) || !rosa) flow.fitView({ padding: 0.1, maxZoom: 1 });
     else {
       const z = phone ? 0.7 : 0.75;
@@ -398,7 +398,7 @@ function Board({ fam, onOpen, onAdd, phone = false }: Props) {
             pannable
             zoomable
             ariaLabel={m.fit}
-            nodeColor={(n) => (n.id === ROSA ? "var(--color-rose)" : n.type === "lines" ? "transparent" : "var(--color-rail)")}
+            nodeColor={(n) => (n.id === ROOT ? "var(--color-rose)" : n.type === "lines" ? "transparent" : "var(--color-rail)")}
             nodeStrokeWidth={0}
             maskColor="rgba(248,242,237,0.7)"
             style={{ width: 150, height: 96, borderRadius: 12, border: "1px solid var(--color-line)", background: "var(--color-paper)" }}
@@ -526,7 +526,7 @@ function Board({ fam, onOpen, onAdd, phone = false }: Props) {
             setSelected(null);
             setCollapsed(new Set());
             setDepth(null);
-            setTimeout(() => centerOn(ROSA, 0.9), 50);
+            setTimeout(() => centerOn(ROOT, 0.9), 50);
           }}
           className="flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[0.88rem] text-burgundy hover:bg-blush/40"
         >

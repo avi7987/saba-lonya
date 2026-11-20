@@ -106,7 +106,7 @@ export default function QuestionsView() {
           <Eyebrow
             icon={
               // eslint-disable-next-line @next/next/no-img-element
-              <img src="/images/rosa-avatar.webp" alt="" className="-ms-2 h-7 w-7 rounded-full bg-blush object-cover ring-2 ring-white" />
+              <img src="/images/avatar.webp" alt="" className="-ms-2 h-7 w-7 rounded-full bg-blush object-cover ring-2 ring-white" />
             }
           >
             {q.eyebrow}

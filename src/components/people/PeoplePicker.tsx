@@ -52,7 +52,7 @@ export function usePeople() {
     () => [
       ...graph.people
         .filter((p) => p.name && !p.placeholder && !p.pending)
-        .map((p) => ({ id: p.id, label: cap(nameOf(p.id)), names: [p.name, p.nameAlt ?? ""].filter(Boolean), person: p, hint: p.id === "rosa" ? undefined : relLabel(p.id) })),
+        .map((p) => ({ id: p.id, label: cap(nameOf(p.id)), names: [p.name, p.nameAlt ?? ""].filter(Boolean), person: p, hint: p.id === "lonya" ? undefined : relLabel(p.id) })),
       ...names.map((n) => ({ id: n.id, label: n.name, names: [n.name], hint: t.picker.notInTree })),
     ],
     [graph, names, nameOf, relLabel, t]

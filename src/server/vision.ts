@@ -28,7 +28,7 @@ export async function estimatePhoto(jpeg: Uint8Array, opts: { rosaInPhoto?: bool
   const born = profile.birthYear;
   const rosa =
     opts.rosaInPhoto && born
-      ? `The photo includes Rosa, a woman born in ${born}. If you can tell which person she is, estimate her age in the photo as "rosa_age".`
+      ? `The photo includes Lonya, a man born in ${born}. If you can tell which person he is, estimate his age in the photo as "rosa_age".`
       : `Set "rosa_age" to null.`;
   const prompt = `You help a family date old photographs of their grandmother Rosa. Today is ${thisYear()}.
 Estimate when this picture was taken from evidence such as: black-and-white vs colour, sepia or faded colour film, print borders and paper texture, photo format, clothing and hairstyles, glasses, furniture, cars, phones, signs, and image quality.

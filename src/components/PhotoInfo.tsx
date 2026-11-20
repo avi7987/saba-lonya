@@ -145,7 +145,7 @@ export default function PhotoInfo({ photo, onChange, onJump }: { photo: Photo; o
   const related = useMemo(() => {
     const same = all.filter((p) => p.memoryId === photo.memoryId && p.id !== photo.id && p.kind !== "audio");
     const near = photo.year ? all.filter((p) => p.memoryId !== photo.memoryId && p.year && Math.abs(p.year - photo.year!) <= 1 && p.kind !== "audio") : [];
-    const withPeople = photo.people?.length ? all.filter((p) => p.id !== photo.id && p.memoryId !== photo.memoryId && p.kind !== "audio" && p.people?.some((x) => x !== "rosa" && photo.people!.includes(x))) : [];
+    const withPeople = photo.people?.length ? all.filter((p) => p.id !== photo.id && p.memoryId !== photo.memoryId && p.kind !== "audio" && p.people?.some((x) => x !== "lonya" && photo.people!.includes(x))) : [];
     return Array.from(new Map([...same, ...withPeople, ...near].map((p) => [p.id, p])).values()).slice(0, 8);
   }, [all, photo]);
 

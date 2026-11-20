@@ -3,7 +3,7 @@
   Builds families of growing difficulty and verifies that nobody is lost, cards never overlap,
   children sit below their parents, and the same data always gives the same picture.
 */
-import { family as seed, HUSBAND, MOTHER, FATHER, ROSA } from "../src/content/family";
+import { family as seed, PARTNER, MOTHER, FATHER, ROOT } from "../src/content/family";
 import { FamilyGraph, expandRequest, mergePeople, type FamilyRequest, type TreePerson } from "../src/lib/family";
 import { layoutFamily } from "../src/lib/familyLayout";
 
@@ -142,6 +142,6 @@ const L3 = verify("second marriage, half-siblings, in-law's parents and sibling,
 
 console.log(failures ? `\n${failures} check(s) failed` : "\nall checks passed");
 process.exit(failures ? 1 : 0);
-void HUSBAND;
+void PARTNER;
 void FATHER;
-void ROSA;
+void ROOT;

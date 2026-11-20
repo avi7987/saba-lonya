@@ -1,5 +1,5 @@
 import "server-only";
-import { ROSA } from "@/content/family";
+import { ROOT } from "@/content/family";
 import type { FamilyGraph } from "@/lib/family";
 import { treeState } from "./treeEdit";
 
@@ -29,7 +29,7 @@ export function describe(g: FamilyGraph, lang: "he" | "ru") {
   const partners = (id: string) => g.partnersOf(id).filter(real);
   const list = (ids: string[]) => ids.map(name).join(", ");
 
-  const children = kids(ROSA);
+  const children = kids(ROOT);
   const grand = children.flatMap(kids);
   const great = grand.flatMap(kids);
   const great2 = great.flatMap(kids);
@@ -37,11 +37,11 @@ export function describe(g: FamilyGraph, lang: "he" | "ru") {
   const count = (ids: string[]) => `${ids.length}${ids.some((x) => !real(x)) ? ` (of them ${ids.filter((x) => !real(x)).length} not named yet)` : ""}`;
 
   const lines: string[] = ["The family tree on the site, as the family entered it (it may not be complete yet):"];
-  const rp = partners(ROSA);
+  const rp = partners(ROOT);
   if (rp.length) lines.push(`Rosa's husband/partner: ${list(rp)}.`);
-  const parents = g.realParentsOf(ROSA).filter(real);
+  const parents = g.realParentsOf(ROOT).filter(real);
   if (parents.length) lines.push(`Rosa's parents: ${list(parents)}.`);
-  const sibs = g.siblingsOf(ROSA).filter(real);
+  const sibs = g.siblingsOf(ROOT).filter(real);
   if (sibs.length) lines.push(`Rosa's brothers and sisters: ${list(sibs)}.`);
   lines.push(`Rosa has ${count(children)} children, ${count(grand)} grandchildren and ${count(great)} great-grandchildren${great2.length ? ` and ${count(great2)} great-great-grandchildren` : ""}.`);
   for (const c of children) {

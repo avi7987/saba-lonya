@@ -5,7 +5,7 @@ import { store } from "./store";
  * How Rosa talked, as the family remembers it: words, pet names and sayings that were hers.
  * Written by the site's owner; the answers in her voice may use them, sparingly.
  */
-const KEY = "rosa-voice";
+const KEY = "lonya-voice";
 export const VOICE_MAX = 2000;
 
 export async function getVoice() {

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp, Plus } from "lucide-react";
-import { ROSA } from "@/content/family";
+import { ROOT } from "@/content/family";
 import type { TreePerson } from "@/lib/family";
 import { useLang } from "@/lib/i18n";
 import { cn } from "../ui";
@@ -45,7 +45,7 @@ export default function PersonCard({
 }) {
   const { t } = useLang();
   const m = t.family.map;
-  const isRosa = person.id === ROSA;
+  const isRosa = person.id === ROOT;
   const born = year(person.born);
   const died = person.died === "?" ? undefined : year(person.died);
   const years = born || died ? `${born ?? "?"}${died ? `–${died}` : ""}` : "";

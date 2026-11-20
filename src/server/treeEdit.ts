@@ -1,5 +1,5 @@
 import "server-only";
-import { family as seed, ROSA } from "@/content/family";
+import { family as seed, ROOT } from "@/content/family";
 import { FamilyGraph, expandRequest, mergePeople, type RequestKind } from "@/lib/family";
 import { familyStore, store, type StoredMemory, type StoredPerson } from "./store";
 
@@ -51,7 +51,7 @@ export async function treeInfo() {
       partnerId: graph.partnerOf(p.id)?.id,
       editable: true,
       movable: !!main && (PLACES.includes(main.kind as RequestKind) || !!main.rel),
-      deletable: p.id !== ROSA && (!!main || !!filler),
+      deletable: p.id !== ROOT && (!!main || !!filler),
       blockers,
     };
   }
@@ -96,7 +96,7 @@ function below(graph: FamilyGraph, id: string) {
 export async function editPerson(id: string, d: Details, place?: Place): Promise<{ ok: true } | { error: string; names?: string[] }> {
   const { approved, graph } = await treeState();
   // Rosa's details can be corrected (a year, a place), never her place in the tree
-  if (!graph.byId.has(id) || (id === ROSA && place?.kind)) return { error: "not found" };
+  if (!graph.byId.has(id) || (id === ROOT && place?.kind)) return { error: "not found" };
   const fields = details(d);
   if (fields.name !== undefined && fields.name.length < 1) return { error: "name" };
   const { main, filler } = backing(id, approved);
@@ -174,7 +174,7 @@ export async function retagAll(from: string, into: string | null) {
  */
 export async function deletePerson(id: string): Promise<{ ok: true; changed: number } | { error: string; names?: string[] }> {
   const { approved, graph } = await treeState();
-  if (!graph.byId.has(id) || id === ROSA) return { error: "not found" };
+  if (!graph.byId.has(id) || id === ROOT) return { error: "not found" };
   const { main, fillers } = backing(id, approved);
   if (main) {
     const made = madeBy(main);

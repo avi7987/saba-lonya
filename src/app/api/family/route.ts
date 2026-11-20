@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { family as seed } from "@/content/family";
 import type { Gender } from "@/content/types";
 import { FamilyGraph, LINK_RELS, expandRequest, mergePeople, type FamilyRequest, type LinkRel, type RequestKind, type TreePerson } from "@/lib/family";
-import { ROSA } from "@/content/family";
+import { ROOT } from "@/content/family";
 import { LIMITS, maxBytes } from "@/lib/limits";
 import { rateLimited } from "@/server/auth";
 import { sniff } from "@/server/sniff";
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
   let rel = f("rel", 10) as LinkRel | undefined;
   const of = f("of");
   // Rosa's parents and siblings keep their fixed places in the tree
-  if (!replaces && of === ROSA && (rel === "parent" || rel === "sibling")) {
+  if (!replaces && of === ROOT && (rel === "parent" || rel === "sibling")) {
     kind = rel;
     rel = undefined;
   }

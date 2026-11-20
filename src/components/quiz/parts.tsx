@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Mic, Share2, Square } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { decadeLabel } from "@/lib/photoDate";
-import { ROSA } from "@/content/family";
+import { ROOT } from "@/content/family";
 import PeoplePicker, { refreshNames } from "../people/PeoplePicker";
 import { DECADES } from "../PhotoActions";
 import { buttonClass, cn } from "../ui";
@@ -97,7 +97,7 @@ export function questionText(card: Card, q: Q, lang: string) {
     case "fact":
       return (lang === "ru" && card.textRu) || card.text;
     case "born":
-      return q.born(card.name, card.gender === "f", card.personId === ROSA);
+      return q.born(card.name, card.gender === "f", card.personId === ROOT);
     case "words":
       return q.words[card.n];
     case "memory":

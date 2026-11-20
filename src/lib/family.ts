@@ -1,4 +1,4 @@
-import { FATHER, HUSBAND, MOTHER, ROSA } from "@/content/family";
+import { FATHER, PARTNER, MOTHER, ROOT } from "@/content/family";
 import type { Gender, Person, Photo } from "@/content/types";
 
 export type RelKey = "self" | "spouse" | "parent" | "sibling" | "child" | "grandchild" | "great" | "partner" | "childInLaw" | "other";
@@ -60,7 +60,7 @@ export class FamilyGraph {
   }
 
   get rosa() {
-    return this.byId.get(ROSA)!;
+    return this.byId.get(ROOT)!;
   }
 
   parentsOf(id: string) {
@@ -91,7 +91,7 @@ export class FamilyGraph {
   /** generations below Rosa: 1 = child, 2 = grandchild… ; null for anyone not descended from her */
   depth(id: string, guard = new Set<string>()): number | null {
     if (this.depthCache.has(id)) return this.depthCache.get(id)!;
-    if (id === ROSA || this.partnersOf(ROSA).includes(id)) return 0;
+    if (id === ROOT || this.partnersOf(ROOT).includes(id)) return 0;
     if (guard.has(id)) return null;
     guard.add(id);
     let best: number | null = null;
@@ -120,10 +120,10 @@ export class FamilyGraph {
   }
 
   relation(id: string): RelKey {
-    if (id === ROSA) return "self";
-    if (this.partnersOf(ROSA).includes(id)) return "spouse";
-    if (this.parentsOf(ROSA).includes(id)) return "parent";
-    if (this.siblingsOf(ROSA).includes(id)) return "sibling";
+    if (id === ROOT) return "self";
+    if (this.partnersOf(ROOT).includes(id)) return "spouse";
+    if (this.parentsOf(ROOT).includes(id)) return "parent";
+    if (this.siblingsOf(ROOT).includes(id)) return "sibling";
     const d = this.depth(id);
     if (d === 1) return "child";
     if (d === 2) return "grandchild";
@@ -150,10 +150,10 @@ export class FamilyGraph {
 
   /** descendants hanging directly under this person (Rosa and her partner count as one) */
   kids(id: string) {
-    const parents = id === ROSA ? [ROSA, ...this.partnersOf(ROSA)] : [id];
+    const parents = id === ROOT ? [ROOT, ...this.partnersOf(ROOT)] : [id];
     return this.people.filter((p) => {
       const pp = this.primaryParent(p.id);
-      return pp && parents.includes(pp) && p.id !== ROSA;
+      return pp && parents.includes(pp) && p.id !== ROOT;
     });
   }
 
@@ -163,8 +163,8 @@ export class FamilyGraph {
   }
 
   roots() {
-    const parents = this.parentsOf(ROSA).map((id) => this.byId.get(id)).filter((p): p is TreePerson => !!p && !p.virtual);
-    const siblings = this.siblingsOf(ROSA).map((id) => this.byId.get(id)!).filter((p) => !p.virtual);
+    const parents = this.parentsOf(ROOT).map((id) => this.byId.get(id)).filter((p): p is TreePerson => !!p && !p.virtual);
+    const siblings = this.siblingsOf(ROOT).map((id) => this.byId.get(id)!).filter((p) => !p.virtual);
     return { parents, siblings };
   }
 
@@ -185,7 +185,7 @@ export class FamilyGraph {
         for (const x of this.parentsOf(id)) queue.push([x, l - 1]);
       }
     };
-    visit(ROSA, 0);
+    visit(ROOT, 0);
     // anyone not linked to Rosa at all still gets a row
     for (const p of this.people) if (!level.has(p.id)) visit(p.id, 0);
     return level;
@@ -199,7 +199,7 @@ export function photosOf(photos: Photo[], id: string) {
 }
 
 export function photosTogether(photos: Photo[], id: string) {
-  return photos.filter((p) => p.people?.includes(id) && p.people.includes(ROSA));
+  return photos.filter((p) => p.people?.includes(id) && p.people.includes(ROOT));
 }
 
 /* ---------- requests: "add a grandchild through a parent who isn't in the tree yet" ---------- */
@@ -264,7 +264,7 @@ export function expandRequest(req: FamilyRequest, baseId: string): TreePerson[] 
     out.push({ id, name: name ?? "", gender: gender ?? "x", parents, placeholder: !name });
     return id;
   };
-  const children = [ROSA, HUSBAND];
+  const children = [ROOT, PARTNER];
 
   switch (req.kind) {
     case "child":
@@ -320,15 +320,15 @@ export function pathToRosa(g: FamilyGraph, id: string) {
   const path = new Set<string>([id]);
   let cur: string | undefined = g.depth(id) === null ? g.partnerOf(id)?.id : id;
   if (cur) path.add(cur);
-  while (cur && cur !== ROSA) {
+  while (cur && cur !== ROOT) {
     cur = g.primaryParent(cur);
     if (cur) path.add(cur);
     if (cur === g.rosa.partnerId) {
-      path.add(ROSA);
+      path.add(ROOT);
       break;
     }
   }
-  path.add(ROSA);
+  path.add(ROOT);
   return path;
 }
 
@@ -338,9 +338,9 @@ export function pathToRosa(g: FamilyGraph, id: string) {
  * the families of people who married in.
  */
 export function chainToRosa(g: FamilyGraph, id: string): string[] {
-  if (id === ROSA) return [ROSA];
-  const prev = new Map<string, string | null>([[ROSA, null]]);
-  const queue = [ROSA];
+  if (id === ROOT) return [ROOT];
+  const prev = new Map<string, string | null>([[ROOT, null]]);
+  const queue = [ROOT];
   while (queue.length) {
     const cur = queue.shift()!;
     if (cur === id) break;

@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { AnimatePresence, animate, motion, useDragControls, useMotionValue, type PanInfo } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Pencil, Plus, UserPlus, X } from "lucide-react";
-import { ROSA } from "@/content/family";
+import { ROOT } from "@/content/family";
 import type { Photo } from "@/content/types";
 import { chainToRosa, photosOf, photosTogether } from "@/lib/family";
 import { useLang } from "@/lib/i18n";
@@ -82,7 +82,7 @@ function PersonDrawer({ fam, id, onClose, onSwitch, onAdd }: { fam: Fam; id: str
   const name = cap(fam.nameOf(id));
   // how this person is connected to Rosa: רוזה ← דנה ← שירה
   const chain = chainToRosa(fam.graph, id);
-  const together = id === ROSA ? [] : photosTogether(fam.photos, id);
+  const together = id === ROOT ? [] : photosTogether(fam.photos, id);
   const all = photosOf(fam.photos, id);
   const alt = lang === "ru" ? (p.nameAlt ? p.name : undefined) : p.nameAlt;
 
@@ -151,11 +151,11 @@ function PersonDrawer({ fam, id, onClose, onSwitch, onAdd }: { fam: Fam; id: str
         </div>
         <div className="flex flex-col gap-8 px-7 pb-10">
           <header className="flex flex-col items-center gap-3 text-center">
-            <PersonAvatar person={p} label={name} center={id === ROSA} className="w-28 text-2xl" />
+            <PersonAvatar person={p} label={name} center={id === ROOT} className="w-28 text-2xl" />
             <h3 className="font-display text-[2rem] font-light leading-tight text-burgundy">{name}</h3>
             {alt && <span className="-mt-2 text-ink-soft">{alt}</span>}
             <span className="text-[0.92rem] text-ink-soft">
-              {!p.placeholder && id !== ROSA && cap(fam.relLabel(id))}
+              {!p.placeholder && id !== ROOT && cap(fam.relLabel(id))}
               {branch && branch.id !== id && ` · ${t.family.branch(cap(fam.nameOf(branch.id)))}`}
             </span>
             {p.pending && <PendingMark />}
@@ -169,7 +169,7 @@ function PersonDrawer({ fam, id, onClose, onSwitch, onAdd }: { fam: Fam; id: str
                       type="button"
                       onClick={() => x !== id && onSwitch(x)}
                       aria-current={x === id ? "true" : undefined}
-                      className={cn("min-h-9 rounded-full px-3", x === ROSA ? "bg-rose text-white" : x === id ? "bg-blush/70 text-burgundy" : "bg-mount text-charcoal hover:bg-blush/50")}
+                      className={cn("min-h-9 rounded-full px-3", x === ROOT ? "bg-rose text-white" : x === id ? "bg-blush/70 text-burgundy" : "bg-mount text-charcoal hover:bg-blush/50")}
                     >
                       {cap(fam.nameOf(x))}
                     </button>
@@ -205,7 +205,7 @@ function PersonDrawer({ fam, id, onClose, onSwitch, onAdd }: { fam: Fam; id: str
                             <PersonAvatar person={g.byId.get(x)!} label={fam.nameOf(x)} className="w-9 text-[0.72rem]" />
                             <span className="flex flex-col text-start leading-tight">
                               <span className="text-[0.92rem]">{cap(fam.nameOf(x))}</span>
-                              {x !== ROSA && !g.byId.get(x)?.placeholder && <span className="text-[0.72rem] text-ink-soft">{fam.relLabel(x)}</span>}
+                              {x !== ROOT && !g.byId.get(x)?.placeholder && <span className="text-[0.72rem] text-ink-soft">{fam.relLabel(x)}</span>}
                             </span>
                           </button>
                         </li>
@@ -224,10 +224,10 @@ function PersonDrawer({ fam, id, onClose, onSwitch, onAdd }: { fam: Fam; id: str
           )}
 
           {together.length > 0 && <PhotoStrip list={together} title={t.family.together} />}
-          {all.length > 0 && <PhotoStrip list={all} title={id === ROSA ? t.family.togetherRosa : t.family.allOf(name)} />}
+          {all.length > 0 && <PhotoStrip list={all} title={id === ROOT ? t.family.togetherRosa : t.family.allOf(name)} />}
           {all.length === 0 && <p className="text-[0.92rem] leading-relaxed text-ink-soft">{t.family.noPhotos}</p>}
 
-          {id !== ROSA && (
+          {id !== ROOT && (
             <button type="button" onClick={() => onAdd({ replaces: id })} className={cn(buttonClass.secondary, "w-full")}>
               <Pencil className="h-4 w-4" strokeWidth={1.4} aria-hidden />
               {t.family.edit}

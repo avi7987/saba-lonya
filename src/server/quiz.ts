@@ -1,5 +1,5 @@
 import "server-only";
-import { ROSA } from "@/content/family";
+import { ROOT } from "@/content/family";
 import { sortYear } from "@/lib/photoDate";
 import { store } from "./store";
 import { treeState } from "./treeEdit";
@@ -118,7 +118,7 @@ export async function quizCards(want?: string): Promise<QuizCard[]> {
   const files = memories.flatMap((m) =>
     m.files
       .filter((f) => f.kind !== "audio" && !f.deleteRequest && (f.thumb || f.kind === "image"))
-      .map((f) => ({ m, f, people: new Set([...(m.people ?? []), ...(f.people ?? [])].filter((x) => x !== ROSA)) }))
+      .map((f) => ({ m, f, people: new Set([...(m.people ?? []), ...(f.people ?? [])].filter((x) => x !== ROOT)) }))
   );
   const src = (m: { id: string }, f: { thumb?: string; name: string }) => `/api/files/memories/${m.id}/${f.thumb ?? f.name}`;
   const when: QuizCard[] = shuffle(files.filter((x) => !x.f.date || x.f.date.source === "ai"))
@@ -140,8 +140,8 @@ export async function quizCards(want?: string): Promise<QuizCard[]> {
       const p = g.byId.get(id);
       return !!p && !p.virtual && !p.placeholder && !!p.name && !p.pending;
     };
-    const kids = g.childrenOf(ROSA);
-    const close = [ROSA, ...g.partnersOf(ROSA), ...kids, ...kids.flatMap((k) => g.partnersOf(k)), ...kids.flatMap((k) => g.childrenOf(k))];
+    const kids = g.childrenOf(ROOT);
+    const close = [ROOT, ...g.partnersOf(ROOT), ...kids, ...kids.flatMap((k) => g.partnersOf(k)), ...kids.flatMap((k) => g.childrenOf(k))];
     born = Array.from(new Set(close))
       .filter((id) => real(id) && !g.byId.get(id)!.born)
       .map((id) => {

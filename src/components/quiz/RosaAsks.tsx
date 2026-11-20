@@ -183,7 +183,7 @@ function Deck() {
           >
             <span className="relative shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/rosa-avatar.webp" alt="" className="h-10 w-10 rounded-full bg-blush object-cover ring-2 ring-white" />
+              <img src="/images/avatar.webp" alt="" className="h-10 w-10 rounded-full bg-blush object-cover ring-2 ring-white" />
               {left > 0 && (
                 <span aria-hidden className="absolute -end-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-rose px-1 text-[0.7rem] tabular-nums text-white ring-2 ring-paper">
                   {left > 9 ? "9+" : left}
@@ -220,7 +220,7 @@ function Deck() {
             >
               <motion.div layout="position" className="flex items-center gap-2 px-4 pt-4">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/images/rosa-avatar.webp" alt="" className="me-1 h-11 w-11 shrink-0 rounded-full bg-blush object-cover ring-[3px] ring-white shadow-[0_6px_16px_-8px_rgba(118,46,73,0.5)]" />
+                <img src="/images/avatar.webp" alt="" className="me-1 h-11 w-11 shrink-0 rounded-full bg-blush object-cover ring-[3px] ring-white shadow-[0_6px_16px_-8px_rgba(118,46,73,0.5)]" />
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="text-[0.8rem] text-rose">{q.eyebrow}</span>
                   {phase === "ask" && <span className="truncate text-[0.92rem] text-ink-soft">{q.openers[opener]}</span>}

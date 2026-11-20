@@ -1,5 +1,5 @@
 import "server-only";
-import { ROSA } from "@/content/family";
+import { ROOT } from "@/content/family";
 import { store, type StoredMemory } from "./store";
 import { chooseDate, estimatePhoto } from "./vision";
 
@@ -32,7 +32,7 @@ export async function analyzeMemory(id: string, opts: { only?: string; force?: b
     if (!src) continue;
     const bytes = await store.readFile(id, src);
     if (!bytes) continue;
-    results.set(f.name, await estimatePhoto(bytes, { rosaInPhoto: m.people?.includes(ROSA) }));
+    results.set(f.name, await estimatePhoto(bytes, { rosaInPhoto: m.people?.includes(ROOT) }));
   }
   const tried = new Date().toISOString();
   if (!results.size) return m;
