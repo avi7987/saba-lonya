@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FileText, Lightbulb } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { cn } from "../ui";
@@ -13,7 +13,8 @@ import { cn } from "../ui";
 
 type Page = { file: string; src: string; original?: string; originalChecked: boolean; he?: string; heChecked: boolean };
 type Fact = { id: string; he: string; ru?: string; year?: number; place?: string; verified: boolean };
-type Reading = { pages: Page[]; facts: Fact[]; waiting: boolean };
+type About = { kind?: string; to?: string; date?: string; place?: string; summary_he?: string; summary_ru?: string; people?: string[]; places?: string[] };
+type Reading = { pages: Page[]; facts: Fact[]; about?: About; waiting: boolean };
 
 export default function PageReading({ memoryId, className }: { memoryId: string; className?: string }) {
   const { t, lang } = useLang();
@@ -25,28 +26,32 @@ export default function PageReading({ memoryId, className }: { memoryId: string;
   const [learned, setLearned] = useState(false);
   const [working, setWorking] = useState(false);
 
+  // fetched once, the first time it is opened; the work goes on even if it is closed again meanwhile
+  const started = useRef(false);
+  const alive = useRef(true);
   useEffect(() => {
-    if (!open || data) return;
-    let live = true;
-    const get = (method: "GET" | "POST") => fetch(`/api/memories/${memoryId}/reading`, { method }).then((r) => (r.ok ? (r.json() as Promise<Reading>) : Promise.reject()));
-    get("GET")
-      .then(async (d) => {
-        if (!live) return;
-        setData(d);
-        // still being read or translated: it is done now, while the page is open
-        if (d.waiting) {
-          setWorking(true);
-          const done = await get("POST").catch(() => null);
-          if (!live) return;
-          setWorking(false);
-          if (done) setData(done);
-        }
-      })
-      .catch(() => live && setFailed(true));
+    alive.current = true;
     return () => {
-      live = false;
+      alive.current = false;
     };
-  }, [open, data, memoryId]);
+  }, []);
+  useEffect(() => {
+    if (!open || started.current) return;
+    started.current = true;
+    const get = (method: "GET" | "POST") => fetch(`/api/memories/${memoryId}/reading`, { method }).then((r) => (r.ok ? (r.json() as Promise<Reading>) : Promise.reject()));
+    (async () => {
+      let cur: Reading | null = await get("GET").catch(() => null);
+      if (!cur) return alive.current && setFailed(true);
+      if (alive.current) setData(cur);
+      // still being read or translated: it is done now, in rounds; what is ready shows as it comes
+      for (let round = 0; cur?.waiting && round < 8 && alive.current; round++) {
+        setWorking(true);
+        cur = await get("POST").catch(() => null);
+        if (alive.current && cur) setData(cur);
+      }
+      if (alive.current) setWorking(false);
+    })();
+  }, [open, memoryId]);
 
   const p = data?.pages[Math.min(page, (data?.pages.length ?? 1) - 1)];
   const shown = p ? (view === "he" ? p.he : p.original) : undefined;
@@ -108,6 +113,26 @@ export default function PageReading({ memoryId, className }: { memoryId: string;
               </button>
               {learned && (
                 <div className="mt-2 rounded-[10px] bg-white/70 p-3 ring-1 ring-charcoal/5">
+                  {data.about && (data.about.summary_he || data.about.summary_ru) && (
+                    <div className="mb-3 flex flex-col gap-1.5 border-b border-line pb-3 text-[0.92rem] leading-relaxed">
+                      <span className="text-[0.78rem] tracking-wide text-rose">{t.memories.aboutPage}</span>
+                      <p dir="auto">{(lang === "ru" ? data.about.summary_ru : data.about.summary_he) || data.about.summary_he || data.about.summary_ru}</p>
+                      {[
+                        [t.memories.aboutTo, data.about.to],
+                        [t.memories.aboutWhen, data.about.date],
+                        [t.memories.aboutWhere, data.about.place],
+                        [t.memories.aboutPeople, data.about.people?.join(", ")],
+                        [t.memories.aboutPlaces, data.about.places?.join(", ")],
+                      ]
+                        .filter(([, v]) => v)
+                        .map(([k, v]) => (
+                          <p key={k} className="text-[0.88rem] text-charcoal/85">
+                            <span className="text-ink-soft">{k}: </span>
+                            <span dir="auto">{v}</span>
+                          </p>
+                        ))}
+                    </div>
+                  )}
                   {data.facts.length ? (
                     <ul className="flex flex-col gap-2 text-[0.92rem] leading-relaxed">
                       {data.facts.map((f) => (
@@ -121,7 +146,7 @@ export default function PageReading({ memoryId, className }: { memoryId: string;
                         </li>
                       ))}
                     </ul>
-                  ) : (
+                  ) : data.about ? null : (
                     <p className="text-[0.9rem] text-ink-soft">{data.waiting ? t.memories.pageWaiting : t.memories.learnedNone}</p>
                   )}
                   <p className="mt-2 text-[0.75rem] text-ink-soft">{t.memories.learnedNote}</p>

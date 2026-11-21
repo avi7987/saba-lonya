@@ -86,7 +86,7 @@ export async function POST(req: Request) {
       const words = typeof b.text === "string" ? b.text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").slice(0, 20000) : "";
       await saveOwnerText(memoryId, file, source, words);
       // done now, while the owner waits: work after the reply is cut short on the free plan
-      await runJobs({ memoryId, limit: 4 });
+      await runJobs({ memoryId, limit: 4, until: Date.now() + 110 * 1000 });
       return json({ ok: true });
     }
     case "process": {

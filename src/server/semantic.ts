@@ -82,7 +82,7 @@ export async function indexMemory(memoryId: string): Promise<boolean> {
       const t = [n.what, n.place, n.when, n.who].filter(Boolean).join(". ");
       for (const c of chunks(t)) pieces.push({ kind: "note", memoryId, file: f.name, text: c });
     }
-  for (const t of (await textStore.list("approved")).filter((x) => x.memoryId === memoryId)) for (const c of chunks(t.text)) pieces.push({ kind: t.source, memoryId, file: t.file, text: c });
+  for (const t of (await textStore.list("approved")).filter((x) => x.memoryId === memoryId && x.source !== "about")) for (const c of chunks(t.text)) pieces.push({ kind: t.source as Exclude<typeof t.source, "about">, memoryId, file: t.file, text: c });
   return replace((v) => v.memoryId === memoryId && v.kind !== "fact", pieces.slice(0, 40));
 }
 

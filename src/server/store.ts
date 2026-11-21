@@ -199,8 +199,11 @@ export const familyStore: Store<StoredPerson> = lazy<StoredPerson>("family");
 export type StoredText = Base & {
   memoryId: string;
   file?: string;
-  /** a letter's words (ocr), what a recording says (transcript), or a letter's words in Hebrew (translation) */
-  source: "ocr" | "transcript" | "translation";
+  /**
+   * a letter's words (ocr), what a recording says (transcript), a letter's words in Hebrew
+   * (translation), or what one memory is and tells, as JSON (about; file-less)
+   */
+  source: "ocr" | "transcript" | "translation" | "about";
   text: string;
   model?: string;
   /** written or corrected by the site's owner, not by the computer */

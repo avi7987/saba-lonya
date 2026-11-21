@@ -19,6 +19,12 @@ export const MODELS = {
   embed: "@cf/baai/bge-m3",
   /** grandma's answers: a larger model that writes more natural, warmer Hebrew and Russian */
   voice: "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  /**
+   * Grandpa's pages: reading them (handwriting too), translating them and finding what they tell.
+   * Compared on his real pages against every model the free plan offers (Nov 2026): it read
+   * handwriting best and translated most faithfully.
+   */
+  pages: "@cf/google/gemma-4-26b-a4b-it",
 } as const;
 
 type Ai = { run(model: string, input: unknown): Promise<unknown> };
@@ -88,13 +94,28 @@ export async function runAi<T = unknown>(kind: Budget, model: string, input: unk
 }
 
 /** a chat answer as text */
-export async function chat(kind: Budget, messages: { role: "system" | "user" | "assistant"; content: unknown }[], opts: { maxTokens?: number; temperature?: number; model?: string } = {}) {
-  const input = { messages, max_tokens: opts.maxTokens ?? 900, temperature: opts.temperature ?? 0.2 };
-  let res = await runAi<{ response?: unknown }>(kind, opts.model ?? MODELS.text, input);
-  // the chosen model is not available (and the day's share is not used up): the usual one answers
-  if (!res && opts.model && opts.model !== MODELS.text && (await budgetLeft(kind)) > 0) res = await runAi<{ response?: unknown }>(kind, MODELS.text, input);
-  if (!res) return null;
+type Answer = { response?: unknown; choices?: { message?: { content?: unknown } }[] };
+/** the text of an answer: older models give "response", newer ones the usual "choices" */
+const answerText = (res: Answer) => {
+  const c = res.choices?.[0]?.message?.content;
+  if (typeof c === "string") return c;
   return typeof res.response === "string" ? res.response : JSON.stringify(res.response ?? "");
+};
+
+/**
+ * A chat answer as text. `think: false` asks a model that reasons first (like Gemma 4) to answer
+ * straight away: much faster where there is nothing to work out, like copying a page's words.
+ */
+export async function chat(kind: Budget, messages: { role: "system" | "user" | "assistant"; content: unknown }[], opts: { maxTokens?: number; temperature?: number; model?: string; think?: boolean } = {}) {
+  const input = { messages, max_tokens: opts.maxTokens ?? 900, temperature: opts.temperature ?? 0.2 };
+  const first = opts.think === false ? { ...input, chat_template_kwargs: { enable_thinking: false } } : input;
+  let res = await runAi<Answer>(kind, opts.model ?? MODELS.text, first);
+  // the chosen model is not available (and the day's share is not used up): the usual one answers
+  if (!res && opts.model && opts.model !== MODELS.text && (await budgetLeft(kind)) > 0) res = await runAi<Answer>(kind, MODELS.text, input);
+  if (!res) return null;
+  const text = answerText(res);
+  // a model that spent all its room thinking gives no answer: that is a failed try, not "no text"
+  return text.trim() ? text : null;
 }
 
 /** the first JSON value in a model's answer, or null (the answer is untrusted text) */

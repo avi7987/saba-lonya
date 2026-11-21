@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { rateLimited } from "@/server/auth";
-import { isHebrew, runJobs } from "@/server/knowledge";
+import { isHebrew, runJobs, type About } from "@/server/knowledge";
 import { factStore, jobStore, store, textStore } from "@/server/store";
 
 export const runtime = "nodejs";
@@ -40,7 +40,13 @@ async function reading(id: string) {
   // still being read or translated: a visit moves the work along a little
   // (a page read before translations existed is put in line for one by the work itself)
   const waiting = jobs.some((j) => j.memoryId === id && j.type !== "index") || pages.some((p) => p.original && !p.he && !isHebrew(p.original));
-  return { pages, facts: found, waiting };
+  let about: About | undefined;
+  try {
+    const a = mine.find((t) => t.source === "about");
+    if (a) about = JSON.parse(a.text) as About;
+  } catch {}
+
+  return { pages, facts: found, about, waiting };
 }
 
 const reply = (r: Awaited<ReturnType<typeof reading>>) => (r ? NextResponse.json(r, { headers: { "Cache-Control": "no-cache" } }) : NextResponse.json({ error: "not found" }, { status: 404 }));
@@ -59,10 +65,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (rateLimited(req, 20, 10 * 60 * 1000, "reading")) return reply(await reading(id));
   const key = `reading-work-${id}`;
   const busy = Number((await store.getMeta(key).catch(() => undefined)) ?? 0);
-  if (Date.now() - busy > 3 * 60 * 1000) {
+  if (Date.now() - busy > 5 * 60 * 1000) {
     await store.setMeta(key, String(Date.now()));
     try {
-      await runJobs({ memoryId: id, limit: 3 });
+      // a round of about two minutes (a page takes up to one); the page asks for another if needed
+      await runJobs({ memoryId: id, limit: 20, until: Date.now() + 110 * 1000 });
     } finally {
       await store.setMeta(key, "0");
     }

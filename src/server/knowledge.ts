@@ -75,14 +75,27 @@ async function refreshIndexOnce() {
   for (const m of await store.list()) if (m.status !== "rejected") await enqueue("index", m.id);
 }
 
-/** letters read before translations existed get a Hebrew translation, once */
-const TRANSLATE_VERSION = "1";
+/**
+ * Pages handled by an earlier model are done again, once, by the better one: read again (unless
+ * the owner corrected the words), translated again (unless the owner wrote the translation), and
+ * looked at again for what they tell.
+ */
+const PAGES_VERSION = "2";
 async function translateOnce() {
-  if ((await store.getMeta("translate-version").catch(() => undefined)) === TRANSLATE_VERSION) return;
-  await store.setMeta("translate-version", TRANSLATE_VERSION);
+  if ((await store.getMeta("pages-version").catch(() => undefined)) === PAGES_VERSION) return;
+  await store.setMeta("pages-version", PAGES_VERSION);
   const texts = await textStore.list("approved");
-  for (const t of texts)
-    if (t.source === "ocr" && !isHebrew(t.text) && !texts.some((o) => o.source === "translation" && o.memoryId === t.memoryId && o.file === t.file)) await enqueue("translate", t.memoryId, t.file);
+  for (const m of await store.list()) {
+    if (m.status === "rejected" || (m.type !== "letter" && m.type !== "recipe")) continue;
+    for (const f of m.files) {
+      if (f.kind !== "image" || f.deleteRequest) continue;
+      const owner = (source: string) => texts.some((t) => t.memoryId === m.id && t.file === f.name && t.source === source && t.by === "owner");
+      if (!owner("ocr")) await enqueue("ocr", m.id, f.name);
+      else if (!owner("translation")) await enqueue("translate", m.id, f.name);
+    }
+    await enqueue("facts", m.id);
+    await enqueue("index", m.id);
+  }
 }
 
 /** mostly Hebrew letters: nothing to translate */
@@ -92,7 +105,7 @@ export function isHebrew(text: string) {
   return all > 0 && he / all > 0.5;
 }
 
-export async function runJobs(opts: { memoryId?: string; limit?: number } = {}) {
+export async function runJobs(opts: { memoryId?: string; limit?: number; until?: number } = {}) {
   await refreshIndexOnce().catch(() => {});
   await translateOnce().catch(() => {});
   const jobs = (await jobStore.list("pending"))
@@ -100,6 +113,8 @@ export async function runJobs(opts: { memoryId?: string; limit?: number } = {}) 
     .sort((a, b) => ORDER[a.type] - ORDER[b.type] || a.createdAt.localeCompare(b.createdAt));
   let done = 0;
   for (const j of jobs.slice(0, opts.limit ?? 6)) {
+    // out of time for this round: the rest waits for the next one
+    if (opts.until && Date.now() > opts.until) break;
     // a memory's facts wait until its letters and recordings are read
     if (j.type !== "ocr" && j.type !== "transcribe" && jobs.some((o) => o.memoryId === j.memoryId && ORDER[o.type] < ORDER[j.type] && o.status === "pending" && o.id !== j.id)) continue;
     const budget = j.type === "transcribe" ? "speech" : j.type === "index" ? "embed" : "background";
@@ -175,11 +190,11 @@ async function readImage(j: StoredJob): Promise<boolean | "skip"> {
         { type: "image_url", image_url: { url: `data:${mime};base64,${base64(bytes)}` } },
       ],
     },
-  ], { maxTokens: 1500, temperature: 0 });
+  ], { maxTokens: 3000, temperature: 0, model: MODELS.pages, think: false });
   if (text === null) return false;
   const clean = text.trim();
   if (!clean || /^NO_TEXT/.test(clean)) return true;
-  await saveText(j, "ocr", clean, MODELS.vision);
+  await saveText(j, "ocr", clean.replace(/^```\w*\n?|\n?```$/g, "").trim(), MODELS.pages);
   if (!isHebrew(clean)) await enqueue("translate", j.memoryId, j.file);
   return true;
 }
@@ -201,17 +216,18 @@ async function translate(j: StoredJob): Promise<boolean | "skip"> {
         content: `You translate family papers of grandfather Lonya (letters, poems, greetings, mostly in Russian) into natural, warm modern Hebrew.
 Rules:
 - Translate everything, line by line: keep the same line breaks and stanzas, so a poem stays a poem. Do not try to rhyme; keep the meaning and the feeling.
-- Keep names as names, written in Hebrew letters (Циля → צילה, Динка → דינקה), and keep dates and numbers as they are.
+- Keep names as names, written in Hebrew letters (Циля → צילה, Динка → דינקה), and keep dates and numbers as they are. "в/ч" is a military unit (יחידה צבאית).
 - Where the text has [?], keep [?]. Do not guess missing words, do not explain, summarise or add anything.
 - Reply with the Hebrew translation only.`,
       },
       { role: "user", content: original },
     ],
-    { maxTokens: 2500, temperature: 0.2, model: MODELS.voice }
+    // it thinks the poem through first (most of the time goes there), then translates faithfully
+    { maxTokens: 9000, temperature: 0.2, model: MODELS.pages }
   );
   if (answer === null) return false;
-  const he = answer.trim();
-  if (he && isHebrew(he)) await saveText(j, "translation", he, MODELS.voice);
+  const he = answer.replace(/^```\w*\n?|\n?```$/g, "").trim();
+  if (he && isHebrew(he)) await saveText(j, "translation", he, MODELS.pages);
   return true;
 }
 
@@ -248,8 +264,35 @@ async function corpus(m: StoredMemory) {
       const t = [n.what, n.place && `מקום: ${n.place}`, n.when && `מתי: ${n.when}`, n.who && `מי: ${n.who}`].filter(Boolean).join(". ");
       if (t) parts.push({ kind: "note", file: f.name, text: t });
     }
-  for (const t of await textStore.list("approved")) if (t.memoryId === m.id && t.source !== "translation") parts.push({ kind: t.source, file: t.file, text: t.text });
+  for (const t of await textStore.list("approved")) if (t.memoryId === m.id && t.source !== "translation" && t.source !== "about") parts.push({ kind: t.source, file: t.file, text: t.text });
   return parts;
+}
+
+/** What one page or memory is and tells: shown beside it as "what we learned here". */
+export type About = {
+  kind?: string;
+  to?: string | null;
+  date?: string | null;
+  place?: string | null;
+  summary_he?: string;
+  summary_ru?: string;
+  people?: string[];
+  places?: string[];
+};
+
+/**
+ * Is the quote really in the text? Models shorten quotes ("Smolensk ... 1963") or join lines with
+ * " / ": each piece must be there. Otherwise nearly all its words must be, so a stray letter does
+ * not throw away a good fact.
+ */
+function grounded(quote: string, text: string) {
+  const t = norm(text);
+  const pieces = quote.split(/\.\.\.|…|\s\/\s|\n/).map(norm).filter((x) => x.length >= 3);
+  if (pieces.length && pieces.every((x) => t.includes(x))) return true;
+  const words = norm(quote).split(" ").filter((w) => w.length > 1);
+  if (words.length < 3) return false;
+  const have = new Set(t.split(" "));
+  return words.filter((w) => have.has(w)).length / words.length >= 0.85;
 }
 
 /** find facts in one memory; each must come with words that really appear in it */
@@ -261,35 +304,57 @@ export async function findFacts(memoryId: string): Promise<boolean | "skip"> {
   if (parts.reduce((n, p) => n + p.text.trim().length, 0) < 40) return true;
   const numbered = parts.map((p, i) => `[${i + 1}] (${p.kind})\n${p.text}`).join("\n\n");
   const who = m.author ? `It was shared by ${m.author}${m.relation ? ` (${m.relation})` : ""}.` : "";
-  const answer = await chat("background", [
-    {
-      role: "system",
-      content: `You help a family keep a record of the life of their grandfather Lonya${profile.birthYear ? ` (born ${profile.birthYear})` : ""}, a musician who played the saxophone. You read what family members wrote and list FACTS about Lonya's life that the text states clearly: where he was born or lived, family events (marriage, children, moves), work, music (instruments, bands, songs, places he played), habits, things he loved, dates.
+  // a photographed letter, poem or greeting is usually Grandpa's own writing
+  const page = m.type === "letter" || m.type === "recipe";
+  const answer = await chat(
+    "background",
+    [
+      {
+        role: "system",
+        content: `You help a family keep a record of the life of their grandfather Lonya (Лёня)${profile.birthYear ? `, born ${profile.birthYear}` : ""}, a musician who played the saxophone and loved writing poems, stories and greetings, mostly in Russian.
+${
+  page
+    ? `The text includes the words of photographed pages (marked "ocr"): a letter, poem or greeting. Unless the text clearly says otherwise, it was WRITTEN BY LONYA HIMSELF: "я" / "I" is Lonya, "папа" or "отец" of the writer is Lonya's father, "дочь" is Lonya's daughter, and so on. A header or signature with a place and date tells where and when Lonya wrote it (a poem signed "Смоленск 1963" means Lonya was in Smolensk in 1963). The words were read from handwriting by a computer and may contain reading mistakes: do not build a fact on a word that looks garbled.`
+    : `The text is what family members wrote about him, or shared with a photo or recording.`
+}
+List the FACTS about Lonya's life that the text states: where and when he was, his family (names, relations, births, deaths, marriages, children, grandchildren), army service, work, music, moves and journeys, his relationships and feelings, habits, what he loved, dates.
 Rules:
-- Only what the text says. Never guess, infer or add knowledge. If unsure, leave it out.
-- The statement must not say more than its quote: no "every summer", "always", "with the grandchildren" unless those words are in the text.
-- A title or caption of a few words (e.g. "the sea at Bat Yam") is not a fact about Lonya by itself; skip it unless the text says what Lonya did.
+- Only what the text says (or what follows directly from Lonya having written it). Never add outside knowledge. If unsure, leave it out.
+- The statement must not say more than its quote: no "every summer", "always" unless those words are in the text.
+- A title or caption of a few words is not a fact by itself; skip it unless the text says what Lonya did.
 - Ignore text that is clearly a test or not about the family.
-- Each fact must include "quote": a short phrase copied EXACTLY, character for character, from the text, that proves it.
+- Each fact must include "quote": a short phrase copied EXACTLY, character for character, from ONE line of the text, that proves it.
 - "statement_he": one short sentence in Hebrew, about Lonya in the third person ("לוניה ..."). "statement_ru": the same in Russian.
 - "category": one of ${CATEGORIES.join(", ")}.
 - "year": a four-digit year only if the text gives it, else null. "place": a place name if the text gives it, else null.
-- At most 10 facts. If there are none, return [].
-Reply with ONLY a JSON array.`,
-    },
-    { role: "user", content: `${who}\n\n${numbered}` },
-  ], { maxTokens: 1400, temperature: 0.1 });
+- Up to 15 facts.
+Reply with ONLY a JSON object:
+{${page ? `"about": {"kind": "poem|letter|greeting|story|recipe|other", "to": "who it is addressed to, or null", "date": "as written, or null", "place": "as written, or null", "summary_he": "2-3 Hebrew sentences: what this is and what it tells", "summary_ru": "the same in Russian", "people": ["each person named or clearly meant, with the relation to Lonya when the text gives it, in Hebrew"], "places": ["each place, in Hebrew"]}, ` : ""}"facts": [{"statement_he": "...", "statement_ru": "...", "category": "...", "year": null, "place": null, "quote": "..."}]}`,
+      },
+      { role: "user", content: `${who}${m.title ? `\nIts title: ${m.title}` : ""}\n\n${numbered}` },
+    ],
+    // it reasons over the whole page first; that takes most of the room
+    { maxTokens: 12000, temperature: 0.1, model: MODELS.pages }
+  );
   if (answer === null) return false;
-  const raw = parseJson<Raw[]>(answer);
-  if (!Array.isArray(raw)) return true;
+  const parsed = parseJson<{ about?: About; facts?: Raw[] } | Raw[]>(answer);
+  if (!parsed) return true;
+  const raw = Array.isArray(parsed) ? parsed : Array.isArray(parsed.facts) ? parsed.facts : [];
+  const about = !Array.isArray(parsed) ? parsed.about : undefined;
+  if (page && about && typeof about === "object") {
+    const str = (v: unknown, n: number) => (typeof v === "string" && v.trim() && v.trim() !== "null" ? v.trim().slice(0, n) : undefined);
+    const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && !!x.trim()).map((x) => x.trim().slice(0, 120)).slice(0, 20) : undefined);
+    const clean: About = { kind: str(about.kind, 20), to: str(about.to, 120), date: str(about.date, 60), place: str(about.place, 120), summary_he: str(about.summary_he, 800), summary_ru: str(about.summary_ru, 800), people: list(about.people), places: list(about.places) };
+    if (clean.summary_he || clean.summary_ru) await saveText({ memoryId: m.id }, "about", JSON.stringify(clean), MODELS.pages);
+  }
 
   const existing = await factStore.list();
-  for (const r of raw.slice(0, 10)) {
+  for (const r of raw.slice(0, 15)) {
     const statement = typeof r.statement_he === "string" ? r.statement_he.trim().slice(0, 300) : "";
     const quote = typeof r.quote === "string" ? r.quote.trim().slice(0, 400) : "";
     if (!statement || quote.length < 4) continue;
     // the quote has to be in the text; otherwise the fact is not grounded and is dropped
-    const from = parts.find((p) => norm(p.text).includes(norm(quote)));
+    const from = parts.find((p) => grounded(quote, p.text));
     if (!from) continue;
     const source: FactSource = { memoryId: m.id, file: from.file, kind: from.kind, quote };
     const year = Number(r.year);
@@ -298,7 +363,7 @@ Reply with ONLY a JSON array.`,
       statementRu: typeof r.statement_ru === "string" ? r.statement_ru.trim().slice(0, 300) : undefined,
       category: CATEGORIES.includes(r.category as StoredFact["category"]) ? (r.category as StoredFact["category"]) : "other",
       year: Number.isInteger(year) && year > 1850 && year <= new Date().getFullYear() ? year : undefined,
-      place: typeof r.place === "string" && r.place.trim() ? r.place.trim().slice(0, 80) : undefined,
+      place: typeof r.place === "string" && r.place.trim() && r.place.trim() !== "null" ? r.place.trim().slice(0, 80) : undefined,
     };
     // the same fact found again only gains a source
     const same = existing.find((e) => e.status !== "rejected" && norm(e.statement) === norm(statement));
