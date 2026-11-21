@@ -54,7 +54,7 @@ export async function isAdmin(req: Request) {
   }
   // on Cloudflare this is a Worker secret; in development it comes from the environment
   const expected = await setting("ADMIN_TOKEN");
-  if (expected && expected.length >= 12 && same(given, expected)) return true;
+  if (expected && expected.trim().length >= MIN_PASSWORD && (same(given, expected) || same(given, expected.trim()))) return true;
   miss(ip);
   return false;
 }
@@ -70,6 +70,11 @@ async function readPassword(): Promise<{ salt: string; hash: string; iter: numbe
   } catch {
     return undefined;
   }
+}
+
+/** whether the owner has chosen a password in the admin page yet */
+export async function passwordChosen() {
+  return !!(await readPassword());
 }
 
 /** the owner's own password, from the admin page */

@@ -308,6 +308,36 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState("");
+  // null while asking; false when no password was chosen yet, so the first one can be chosen here
+  const [chosen, setChosen] = useState<boolean | null>(null);
+  const [first, setFirst] = useState({ pw: "", again: "" });
+  useEffect(() => {
+    fetch("/api/admin/password")
+      .then((r) => r.json())
+      .then((j: { chosen?: boolean }) => setChosen(j.chosen !== false))
+      .catch(() => setChosen(true));
+  }, []);
+  const chooseFirst = async () => {
+    setError("");
+    if (first.pw.length < 6) return setError("הסיסמה צריכה להיות לפחות 6 תווים.");
+    if (first.pw.trim() !== first.pw) return setError("בלי רווחים בהתחלה או בסוף הסיסמה.");
+    if (first.pw !== first.again) return setError("שתי הסיסמאות שהוקלדו לא זהות. נסו שוב.");
+    setBusy(true);
+    try {
+      const r = await fetch("/api/admin/password", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ password: first.pw }) });
+      if (!r.ok) {
+        setChosen(true);
+        return setError("כבר נבחרה סיסמה לאתר הזה. היכנסו איתה.");
+      }
+      setChosen(true);
+      setToken(first.pw);
+      await load(first.pw);
+    } catch {
+      setError("לא הצלחנו להתחבר לאתר. בדקו את החיבור לאינטרנט ונסו שוב.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const load = useCallback(async (tk: string, handed = false) => {
     setError("");
@@ -467,7 +497,28 @@ export default function AdminPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-5 pb-24 pt-10">
-        {!authed ? (
+        {!authed && chosen === false ? (
+          <div className="mx-auto max-w-md rounded-lg bg-white p-8 shadow-[var(--shadow-paper)]">
+            <h1 className="font-display text-3xl font-light text-burgundy">בחירת סיסמה לניהול</h1>
+            <p className="mt-3 leading-relaxed text-ink-soft">לאתר הזה עוד אין סיסמת ניהול. בחרו אחת עכשיו (לפחות 6 תווים), ומעכשיו רק איתה נכנסים לכאן. כדאי לבחור את אותה סיסמה כמו באתר של סבתא רוזה, ואז המעבר בין האתרים לא יבקש להתחבר שוב.</p>
+            <form
+              className="mt-6 flex flex-col gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                chooseFirst();
+              }}
+            >
+              <label htmlFor="np">סיסמה חדשה</label>
+              <input id="np" type="password" autoComplete="new-password" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={first.pw} onChange={(e) => setFirst({ ...first, pw: e.target.value })} className="rounded-md border border-charcoal/20 bg-white px-4 py-3 text-left" dir="ltr" />
+              <label htmlFor="np2">שוב, לבדיקה</label>
+              <input id="np2" type="password" autoComplete="new-password" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={first.again} onChange={(e) => setFirst({ ...first, again: e.target.value })} className="rounded-md border border-charcoal/20 bg-white px-4 py-3 text-left" dir="ltr" />
+              <button type="submit" disabled={busy || !first.pw || !first.again} className="mt-2 min-h-12 rounded-full bg-rose text-white transition-colors hover:bg-burgundy disabled:opacity-50">
+                {busy ? "שומרים…" : "שמירה וכניסה"}
+              </button>
+              {error && <p role="alert" className="text-burgundy">{error}</p>}
+            </form>
+          </div>
+        ) : !authed ? (
           <div className="mx-auto max-w-md rounded-lg bg-white p-8 shadow-[var(--shadow-paper)]">
             <h1 className="font-display text-3xl font-light text-burgundy">כניסה לניהול</h1>
             <p className="mt-3 leading-relaxed text-ink-soft">כאן מטפלים בבקשות הסרה, מאשרים אנשים לעץ המשפחה וכותבים מילים לסיפור החיים.</p>
