@@ -31,6 +31,8 @@ export type StoredFile = {
   phash?: string;
   /** someone asked the owner to remove this file */
   deleteRequest?: DeleteRequest;
+  /** a page of writing (a letter, poem, greeting, typed or handwritten text), not a photo: its words are read */
+  page?: boolean;
   /** last time the date estimate was tried (so it is retried later, not on every visit) */
   aiTriedAt?: string;
   /** family members tagged in this photo (ids in the family tree) */

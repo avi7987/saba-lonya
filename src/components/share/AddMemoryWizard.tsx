@@ -405,10 +405,11 @@ export default function AddMemoryWizard() {
         return;
       }
       if (xhr.status < 200 || xhr.status >= 300) return setState("error");
-      let body: { skipped?: number } = {};
+      let body: { skipped?: number; id?: string } = {};
       try {
         body = JSON.parse(xhr.responseText);
       } catch {}
+      if (body.id) startPageWork(body.id);
       setSkipped((body.skipped ?? 0) + (files.length - sendable.length));
       try {
         localStorage.removeItem(DRAFT);
@@ -681,8 +682,8 @@ export default function AddMemoryWizard() {
 
           {visual && (
             <fieldset className="flex flex-col gap-3">
-              <legend className="mb-1 text-[1.02rem] text-charcoal">{s.whenQ}</legend>
-              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={s.whenQ}>
+              <legend className="mb-1 text-[1.02rem] text-charcoal">{isText(type) ? s.whenWrittenQ : s.whenQ}</legend>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={isText(type) ? s.whenWrittenQ : s.whenQ}>
                 {(["unknown", "date", "year", "decade"] as WhenMode[]).map((m) => (
                   <button
                     key={m}
@@ -716,7 +717,8 @@ export default function AddMemoryWizard() {
           )}
 
           <PeoplePicker
-            label={visual ? s.people : w.about}
+            // a photographed poem or letter has nobody "in" it: ask who it is about instead
+            label={visual && !isText(type) ? s.people : w.about}
             selected={tagged}
             added={newNames}
             onChange={(ids, names) => {
@@ -913,4 +915,20 @@ export default function AddMemoryWizard() {
       )}
     </div>
   );
+}
+
+/**
+ * Pages of writing in what was just shared are read, translated and looked at right away, while
+ * the thank-you screen is open (the hourly run does it anyway if this is cut short). The site needs
+ * a few seconds first to notice which pictures are pages.
+ */
+function startPageWork(id: string) {
+  const url = `/api/memories/${id}/reading`;
+  setTimeout(async () => {
+    for (let round = 0; round < 6; round++) {
+      const r = await fetch(url, { method: "POST" }).catch(() => null);
+      const d = r?.ok ? ((await r.json().catch(() => null)) as { waiting?: boolean } | null) : null;
+      if (!d?.waiting) break;
+    }
+  }, 12000);
 }

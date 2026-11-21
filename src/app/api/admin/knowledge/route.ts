@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/server/auth";
 import { aiAvailable } from "@/server/ai";
-import { enqueueMemory, queueState, runJobs, saveOwnerText } from "@/server/knowledge";
+import { enqueueMemory, queueState, readsPages, runJobs, saveOwnerText } from "@/server/knowledge";
 import { indexFact, indexState } from "@/server/semantic";
 import { factStore, jobStore, store, textStore, type StoredFact } from "@/server/store";
 
@@ -18,10 +18,10 @@ export async function GET(req: Request) {
   const titles = Object.fromEntries(memories.map((m) => [m.id, { title: m.title || m.body.slice(0, 60), author: m.author }]));
   // every photographed page of a letter or recipe, with what was read from it and its Hebrew
   const pages = memories
-    .filter((m) => m.status !== "rejected" && (m.type === "letter" || m.type === "recipe"))
+    .filter((m) => m.status !== "rejected" && readsPages(m))
     .flatMap((m) =>
       m.files
-        .filter((f) => f.kind === "image")
+        .filter((f) => f.kind === "image" && (f.page || m.type === "letter" || m.type === "recipe"))
         .map((f) => {
           const of = (source: "ocr" | "translation") => {
             const t = texts.find((x) => x.memoryId === m.id && x.file === f.name && x.source === source);

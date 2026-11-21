@@ -119,6 +119,8 @@ export type Memory = {
   mediaSrc?: string;
   /** what is said in the recording or video, written down by the computer (may contain errors) */
   transcript?: string;
+  /** it has pages of writing (a letter, a poem): their words and translation can be opened */
+  hasPages?: boolean;
   removalRequested?: boolean;
   createdAt: string;
   placeholder?: boolean;

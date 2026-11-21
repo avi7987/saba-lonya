@@ -13,7 +13,21 @@ import { factStore, jobStore, store, textStore, type FactSource, type StoredFact
   until the site's owner checks it. Nothing found by the computer is shown as certain.
 */
 
-const TYPES_TO_READ = new Set(["letter", "recipe"]);
+/** kinds whose pictures are usually pages of writing; in other kinds, pages are noticed one by one */
+const TYPES_TO_READ = new Set(["letter", "recipe", "story"]);
+
+/** kinds that are pages of writing by definition (a story's pictures may be photos: each is checked) */
+const PAGE_TYPES = new Set(["letter", "recipe"]);
+
+/** does this memory have pages of writing to read? */
+export const readsPages = (m: Pick<StoredMemory, "type" | "files">) => m.files.some((f) => f.kind === "image" && !f.deleteRequest && (f.page || PAGE_TYPES.has(m.type ?? "")));
+
+/** a picture turned out to be a page of writing: read it, then look at the memory again */
+export async function enqueuePage(memoryId: string, file: string) {
+  await enqueue("ocr", memoryId, file);
+  await enqueue("facts", memoryId);
+  await enqueue("index", memoryId);
+}
 const MAX_AUDIO = 20 * 1024 * 1024;
 const MAX_IMAGE = 2_500_000;
 const CATEGORIES: StoredFact["category"][] = ["origin", "family", "home", "work", "events", "traits", "food", "other"];
@@ -41,7 +55,7 @@ export async function enqueueMemory(m: StoredMemory) {
     if (f.deleteRequest) continue;
     // recordings, and videos whose soundtrack was taken out when they were shared
     if (f.kind === "audio" || (f.kind === "video" && f.sound)) await enqueue("transcribe", m.id, f.name);
-    if (f.kind === "image" && TYPES_TO_READ.has(m.type ?? "")) await enqueue("ocr", m.id, f.name);
+    if (f.kind === "image" && (f.page || TYPES_TO_READ.has(m.type ?? ""))) await enqueue("ocr", m.id, f.name);
   }
   await enqueue("facts", m.id);
   await enqueue("index", m.id);
@@ -80,15 +94,15 @@ async function refreshIndexOnce() {
  * the owner corrected the words), translated again (unless the owner wrote the translation), and
  * looked at again for what they tell.
  */
-const PAGES_VERSION = "2";
+const PAGES_VERSION = "3";
 async function translateOnce() {
   if ((await store.getMeta("pages-version").catch(() => undefined)) === PAGES_VERSION) return;
   await store.setMeta("pages-version", PAGES_VERSION);
   const texts = await textStore.list("approved");
   for (const m of await store.list()) {
-    if (m.status === "rejected" || (m.type !== "letter" && m.type !== "recipe")) continue;
+    if (m.status === "rejected" || !m.files.some((f) => f.kind === "image" && (f.page || TYPES_TO_READ.has(m.type ?? "")))) continue;
     for (const f of m.files) {
-      if (f.kind !== "image" || f.deleteRequest) continue;
+      if (f.kind !== "image" || f.deleteRequest || !(f.page || TYPES_TO_READ.has(m.type ?? ""))) continue;
       const owner = (source: string) => texts.some((t) => t.memoryId === m.id && t.file === f.name && t.source === source && t.by === "owner");
       if (!owner("ocr")) await enqueue("ocr", m.id, f.name);
       else if (!owner("translation")) await enqueue("translate", m.id, f.name);
@@ -185,16 +199,18 @@ async function readImage(j: StoredJob): Promise<boolean | "skip"> {
       content: [
         {
           type: "text",
-          text: `Copy out all the text in this image exactly as written (handwritten or printed), in its original language (often Hebrew or Russian), keeping line breaks. Do not translate, summarise or add anything. Where a word cannot be read, write [?]. If there is no text, answer exactly: NO_TEXT`,
+          text: `Copy out all the text in this image exactly as written (handwritten or printed), in its original language (often Hebrew or Russian), keeping line breaks. Do not translate, summarise or add anything. Where a word cannot be read, write [?]. If there is no text, or the picture is a photograph of people, places or things rather than a page of writing (even if a few words, like a sign or a label, can be seen), answer exactly: NO_TEXT`,
         },
         { type: "image_url", image_url: { url: `data:${mime};base64,${base64(bytes)}` } },
       ],
     },
   ], { maxTokens: 3000, temperature: 0, model: MODELS.pages, think: false });
   if (text === null) return false;
-  const clean = text.trim();
-  if (!clean || /^NO_TEXT/.test(clean)) return true;
-  await saveText(j, "ocr", clean.replace(/^```\w*\n?|\n?```$/g, "").trim(), MODELS.pages);
+  const clean = text.replace(/^\s*```\w*\n?|\n?```\s*$/g, "").trim();
+  if (!clean || /^NO_TEXT/.test(clean) || clean.length < 12) return true;
+  // it is a page of writing: marked so, it is shown with its words wherever it appears
+  if (!f.page) await store.update(m.id, (cur) => ({ ...cur, files: cur.files.map((x) => (x.name === f.name ? { ...x, page: true } : x)) }));
+  await saveText(j, "ocr", clean, MODELS.pages);
   if (!isHebrew(clean)) await enqueue("translate", j.memoryId, j.file);
   return true;
 }
@@ -305,7 +321,7 @@ export async function findFacts(memoryId: string): Promise<boolean | "skip"> {
   const numbered = parts.map((p, i) => `[${i + 1}] (${p.kind})\n${p.text}`).join("\n\n");
   const who = m.author ? `It was shared by ${m.author}${m.relation ? ` (${m.relation})` : ""}.` : "";
   // a photographed letter, poem or greeting is usually Grandpa's own writing
-  const page = m.type === "letter" || m.type === "recipe";
+  const page = readsPages(m);
   const answer = await chat(
     "background",
     [

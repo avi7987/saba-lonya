@@ -1,6 +1,7 @@
 import "server-only";
 import { ROOT } from "@/content/family";
 import { store, type StoredMemory } from "./store";
+import { enqueuePage } from "./knowledge";
 import { chooseDate, estimatePhoto } from "./vision";
 
 /** Run something after the response has been sent (Cloudflare), or right away (development). */
@@ -27,7 +28,8 @@ export async function analyzeMemory(id: string, opts: { only?: string; force?: b
   for (const f of m.files) {
     if (opts.only && f.name !== opts.only) continue;
     if (f.kind === "audio") continue;
-    if (!opts.force && f.date?.source === "user") continue;
+    // a photo the family dated is still looked at once, to notice a page of writing
+    if (!opts.force && f.date?.source === "user" && f.aiTriedAt) continue;
     const src = f.thumb ?? (f.kind === "image" && f.size < 2_000_000 ? f.name : undefined);
     if (!src) continue;
     const bytes = await store.readFile(id, src);
@@ -36,15 +38,18 @@ export async function analyzeMemory(id: string, opts: { only?: string; force?: b
   }
   const tried = new Date().toISOString();
   if (!results.size) return m;
+  // pages of writing found among the pictures are read, translated and looked at for what they tell
+  for (const [name, est] of results) if (est?.document && !m.files.find((f) => f.name === name)?.page) await enqueuePage(id, name);
   return store.update(id, (cur: StoredMemory) => ({
     ...cur,
     files: cur.files.map((f) => {
       if (!results.has(f.name)) return f;
       const est = results.get(f.name)!;
       if (!est) return { ...f, aiTriedAt: tried };
+      if (!est.date) return { ...f, aiTriedAt: tried, page: est.document || f.page };
       const user = opts.force ? undefined : f.date?.source === "user" ? f.date : undefined;
       const exif = f.date?.source === "exif" ? f.date : undefined;
-      return { ...f, aiTriedAt: tried, date: chooseDate(user, exif, est) ?? f.date, category: f.category ?? est?.category };
+      return { ...f, aiTriedAt: tried, page: est.document || f.page, date: chooseDate(user, exif, est) ?? f.date, category: f.category ?? est?.category };
     }),
   }));
 }

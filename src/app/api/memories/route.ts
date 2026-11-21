@@ -6,7 +6,7 @@ import { resolvePeople } from "@/server/people";
 import { MEMORY_TYPES, store, textStore, type MemoryType, type StoredMemory, type StoredText } from "@/server/store";
 import { afterStore, canStore } from "@/server/quota";
 import { analyzeMemory, later } from "@/server/analyze";
-import { enqueueMemory, runJobs } from "@/server/knowledge";
+import { enqueueMemory, readsPages, runJobs } from "@/server/knowledge";
 import { cleanDate, type PhotoDate } from "@/lib/photoDate";
 import type { CategoryId } from "@/content/types";
 import type { NewFile } from "@/server/store";
@@ -59,6 +59,8 @@ const publicShape = (m: StoredMemory, texts: StoredText[] = []) => {
     mediaKind: media?.kind,
     mediaSrc: media ? url(media.name) : undefined,
     transcript: media ? texts.find((t) => t.memoryId === m.id && t.file === media.name && t.source === "transcript")?.text : undefined,
+    // pages of writing: their words and translation can be opened on the card
+    hasPages: readsPages(m) || undefined,
     removalRequested: !!m.deleteRequest,
   };
 };
@@ -170,7 +172,8 @@ export async function POST(req: Request) {
   const saved = await store.create({ type, author, relation, title, body, people: people.length ? people : undefined, lang: detectLang(`${title ?? ""} ${body}`) }, files, "approved");
   if (files.length) await afterStore();
   // estimate dates for undated photos (and check "dated" scans) after answering the visitor
-  if (files.some((f) => f.kind !== "audio" && f.date?.source !== "user")) await later(analyzeMemory(saved.id));
+  // (and notice pages of writing among the pictures, whatever kind of memory was chosen)
+  if (files.some((f) => f.kind !== "audio")) await later(analyzeMemory(saved.id));
   // read its letters, write down its recordings, and look for facts, in the background
   await enqueueMemory(saved);
   await later(runJobs({ memoryId: saved.id }));
