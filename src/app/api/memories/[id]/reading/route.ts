@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { later } from "@/server/analyze";
+import { rateLimited } from "@/server/auth";
 import { isHebrew, runJobs } from "@/server/knowledge";
 import { factStore, jobStore, store, textStore } from "@/server/store";
 
@@ -10,10 +10,9 @@ export const runtime = "nodejs";
   language and in Hebrew (each marked as the computer's work or as checked by the family), and the
   facts about Lonya found in it (verified ones, and suggestions still waiting for the owner).
 */
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+async function reading(id: string) {
   const m = await store.get(id);
-  if (!m || m.status === "rejected") return NextResponse.json({ error: "not found" }, { status: 404 });
+  if (!m || m.status === "rejected") return null;
 
   const [texts, facts, jobs] = await Promise.all([textStore.list("approved"), factStore.list(), jobStore.list("pending")]);
   const mine = texts.filter((t) => t.memoryId === id);
@@ -41,7 +40,32 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   // still being read or translated: a visit moves the work along a little
   // (a page read before translations existed is put in line for one by the work itself)
   const waiting = jobs.some((j) => j.memoryId === id && j.type !== "index") || pages.some((p) => p.original && !p.he && !isHebrew(p.original));
-  if (waiting) await later(runJobs({ memoryId: id, limit: 3 }));
+  return { pages, facts: found, waiting };
+}
 
-  return NextResponse.json({ pages, facts: found, waiting }, { headers: { "Cache-Control": "no-cache" } });
+const reply = (r: Awaited<ReturnType<typeof reading>>) => (r ? NextResponse.json(r, { headers: { "Cache-Control": "no-cache" } }) : NextResponse.json({ error: "not found" }, { status: 404 }));
+
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  return reply(await reading((await params).id));
+}
+
+/**
+ * Someone is looking at a page that is still being read or translated: do that work now, while
+ * they wait (work left to run after a reply is cut short on the free plan, and translating a long
+ * poem takes longer than that). One visitor at a time per memory.
+ */
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const id = (await params).id;
+  if (rateLimited(req, 20, 10 * 60 * 1000, "reading")) return reply(await reading(id));
+  const key = `reading-work-${id}`;
+  const busy = Number((await store.getMeta(key).catch(() => undefined)) ?? 0);
+  if (Date.now() - busy > 3 * 60 * 1000) {
+    await store.setMeta(key, String(Date.now()));
+    try {
+      await runJobs({ memoryId: id, limit: 3 });
+    } finally {
+      await store.setMeta(key, "0");
+    }
+  }
+  return reply(await reading(id));
 }

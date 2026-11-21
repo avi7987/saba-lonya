@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/server/auth";
 import { aiAvailable } from "@/server/ai";
-import { later } from "@/server/analyze";
 import { enqueueMemory, queueState, runJobs, saveOwnerText } from "@/server/knowledge";
 import { indexFact, indexState } from "@/server/semantic";
 import { factStore, jobStore, store, textStore, type StoredFact } from "@/server/store";
@@ -86,7 +85,8 @@ export async function POST(req: Request) {
       if (!m || !source || !m.files.some((f) => f.name === file && f.kind === "image")) return json({ error: "not found" }, 404);
       const words = typeof b.text === "string" ? b.text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").slice(0, 20000) : "";
       await saveOwnerText(memoryId, file, source, words);
-      await later(runJobs({ memoryId, limit: 4 }));
+      // done now, while the owner waits: work after the reply is cut short on the free plan
+      await runJobs({ memoryId, limit: 4 });
       return json({ ok: true });
     }
     case "process": {

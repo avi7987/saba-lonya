@@ -23,13 +23,25 @@ export default function PageReading({ memoryId, className }: { memoryId: string;
   const [page, setPage] = useState(0);
   const [view, setView] = useState<"he" | "original">(lang === "ru" ? "original" : "he");
   const [learned, setLearned] = useState(false);
+  const [working, setWorking] = useState(false);
 
   useEffect(() => {
     if (!open || data) return;
     let live = true;
-    fetch(`/api/memories/${memoryId}/reading`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d: Reading) => live && setData(d))
+    const get = (method: "GET" | "POST") => fetch(`/api/memories/${memoryId}/reading`, { method }).then((r) => (r.ok ? (r.json() as Promise<Reading>) : Promise.reject()));
+    get("GET")
+      .then(async (d) => {
+        if (!live) return;
+        setData(d);
+        // still being read or translated: it is done now, while the page is open
+        if (d.waiting) {
+          setWorking(true);
+          const done = await get("POST").catch(() => null);
+          if (!live) return;
+          setWorking(false);
+          if (done) setData(done);
+        }
+      })
       .catch(() => live && setFailed(true));
     return () => {
       live = false;
@@ -53,7 +65,8 @@ export default function PageReading({ memoryId, className }: { memoryId: string;
         <div className="mt-3 flex flex-col gap-3">
           {!data && !failed && <p className="text-[0.9rem] text-ink-soft">…</p>}
           {failed && <p className="text-[0.9rem] text-ink-soft">{t.memories.pageEmpty}</p>}
-          {data && !data.pages.length && <p className="text-[0.9rem] text-ink-soft">{data.waiting ? t.memories.pageWaiting : t.memories.pageEmpty}</p>}
+          {working && <p className="animate-pulse text-[0.9rem] text-burgundy">{t.memories.pageWorking}</p>}
+          {data && !data.pages.length && !working && <p className="text-[0.9rem] text-ink-soft">{data.waiting ? t.memories.pageWaiting : t.memories.pageEmpty}</p>}
 
           {p && (
             <>

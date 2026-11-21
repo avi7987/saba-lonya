@@ -419,7 +419,7 @@ export default function KnowledgeManager({ token, onDone }: { token: string; onD
                 page={p}
                 title={data.titles[p.memoryId]?.title ?? ""}
                 busy={busy}
-                onSave={(source, text) => call({ action: "page", memoryId: p.memoryId, file: p.file, source, text }, source === "ocr" ? "המקור נשמר. התרגום יתעדכן בעוד כמה דקות." : "התרגום נשמר.")}
+                onSave={(source, text) => call({ action: "page", memoryId: p.memoryId, file: p.file, source, text }, source === "ocr" ? "המקור נשמר, והתרגום עודכן." : "התרגום נשמר.")}
               />
             ))}
           </ul>
