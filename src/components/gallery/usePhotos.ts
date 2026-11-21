@@ -23,6 +23,7 @@ type ApiPhoto = {
   contributor: string;
   caption?: string;
   memoryId: string;
+  hasText?: boolean;
   file: string;
   removalRequested?: boolean;
 };
@@ -66,6 +67,7 @@ function load(): Promise<Photo[]> {
         people: p.people,
         contributor: p.contributor,
         memoryId: p.memoryId,
+        hasText: p.hasText,
         file: p.file,
         removalRequested: p.removalRequested,
       })))

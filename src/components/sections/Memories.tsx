@@ -14,6 +14,7 @@ import { STATIC, TLink } from "../Transition";
 import { Container, Pill, SectionIntro, buttonClass, cn } from "../ui";
 import { isMemory } from "@/lib/memoryKinds";
 import MemoryWall from "../memories/MemoryWall";
+import PageReading from "../memories/PageReading";
 
 const dateFmt = (iso: string, lang: string) => {
   try {
@@ -110,6 +111,7 @@ export function MemoryCard({ m, index = 0, className }: { m: Memory; index?: num
       </>
       )}
 
+      {(m.type === "letter" || m.type === "recipe") && m.photoSrc && !m.placeholder && <PageReading memoryId={m.id} className="mt-4" />}
       {m.mediaKind === "audio" && m.mediaSrc && <AudioPlayer src={m.mediaSrc} title={m.title || m.author} className="mt-5" />}
       {m.mediaKind === "video" && m.mediaSrc && (
         <video src={m.mediaSrc} controls playsInline preload="metadata" className="mt-5 w-full rounded-[var(--radius-photo)] bg-black" />

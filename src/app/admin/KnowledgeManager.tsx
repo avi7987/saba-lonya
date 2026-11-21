@@ -11,7 +11,61 @@ type Data = {
   titles: Record<string, { title: string; author: string }>;
   queue: { waiting: number; failed: { id: string; type: string; memoryId: string; error?: string }[]; budget: { background: number; speech: number } };
   ai: boolean;
+  pages: PageText[];
 };
+
+type PageText = { memoryId: string; file: string; src: string; full: string; ocr?: { text: string; by?: "owner" }; translation?: { text: string; by?: "owner" } };
+
+/**
+ * One photographed page: what the computer read and its Hebrew, side by side, each one editable.
+ * The computer reads cursive handwriting poorly, so the owner (or someone who reads Russian) can
+ * correct the words; a corrected original is translated again by itself.
+ */
+function PageEditor({ page, title, busy, onSave }: { page: PageText; title: string; busy: boolean; onSave: (source: "ocr" | "translation", text: string) => void }) {
+  const [ocr, setOcr] = useState(page.ocr?.text ?? "");
+  const [he, setHe] = useState(page.translation?.text ?? "");
+  const field = "min-h-56 w-full rounded-md border border-charcoal/20 bg-white px-3 py-2 text-[0.95rem] leading-relaxed";
+  const status = (t?: { by?: "owner" }) => (!t ? "עוד אין" : t.by === "owner" ? "נבדק בידיכם" : "נעשה במחשב, כדאי לבדוק");
+  const changedOcr = ocr.trim() !== (page.ocr?.text ?? "").trim();
+  const changedHe = he.trim() !== (page.translation?.text ?? "").trim();
+  return (
+    <li className="rounded-lg bg-white p-4 shadow-[var(--shadow-paper)]">
+      <div className="mb-3 flex items-center gap-3">
+        <a href={page.full} target="_blank" rel="noreferrer" className="shrink-0">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={page.src} alt="הדף המצולם" className="h-20 w-16 rounded object-cover ring-1 ring-line" />
+        </a>
+        <span className="flex flex-col">
+          <a href={`/#m-${page.memoryId}`} target="_blank" rel="noreferrer" className="text-burgundy underline decoration-dusty/50 underline-offset-4">
+            {title || "זיכרון"}
+          </a>
+          <span className="text-[0.82rem] text-ink-soft">לחיצה על התמונה פותחת את הדף בגודל מלא</span>
+        </span>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">
+        <label className="flex flex-col gap-1">
+          <span>
+            הטקסט במקור <span className="text-[0.8rem] text-ink-soft">· {status(page.ocr)}</span>
+          </span>
+          <textarea value={ocr} onChange={(e) => setOcr(e.target.value)} dir="auto" className={field} placeholder="אפשר להקליד או להדביק כאן את מה שכתוב בדף" />
+          <button type="button" disabled={busy || !changedOcr} onClick={() => onSave("ocr", ocr)} className="w-fit rounded-full bg-burgundy px-4 py-1.5 text-[0.9rem] text-white disabled:opacity-40">
+            שמירת המקור
+          </button>
+          <span className="text-[0.78rem] text-ink-soft">אחרי שמירה, התרגום לעברית ייעשה מחדש לבד (אם לא כתבתם אותו בעצמכם).</span>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span>
+            תרגום לעברית <span className="text-[0.8rem] text-ink-soft">· {status(page.translation)}</span>
+          </span>
+          <textarea value={he} onChange={(e) => setHe(e.target.value)} dir="rtl" className={field} />
+          <button type="button" disabled={busy || !changedHe} onClick={() => onSave("translation", he)} className="w-fit rounded-full bg-burgundy px-4 py-1.5 text-[0.9rem] text-white disabled:opacity-40">
+            שמירת התרגום
+          </button>
+        </label>
+      </div>
+    </li>
+  );
+}
 
 export const CATEGORY_HE: Record<StoredFact["category"], string> = { origin: "שורשים", family: "משפחה", home: "בית", work: "עבודה", events: "אירועים", traits: "אופי", food: "אוכל", other: "אחר" };
 const KIND_HE = { memory: "מתוך הזיכרון", note: "ממה שהמשפחה סיפרה על תמונה", ocr: "מתוך מכתב או מסמך", transcript: "מתוך הקלטה", owner: "נכתב על ידי מנהל האתר", family: "סופר ישירות באתר" } as const;
@@ -349,15 +403,38 @@ export default function KnowledgeManager({ token, onDone }: { token: string; onD
         {!facts.length && <li className="text-ink-soft">{tab === "pending" ? "אין כרגע הצעות לבדיקה." : tab === "approved" ? "עוד אין עובדות מאומתות." : "לא נדחה שום דבר."}</li>}
       </ul>
 
-      {data.texts.length > 0 && (
+      {data.pages.length > 0 && (
+        <section className="flex flex-col gap-3">
+          <h2 className="flex items-center gap-2 font-display text-2xl text-burgundy">
+            <FileText className="h-5 w-5" aria-hidden />
+            דפים כתובים: מכתבים, שירים וברכות ({data.pages.length})
+          </h2>
+          <p className="max-w-3xl text-ink-soft">
+            מה שהמחשב קרא מכל דף, והתרגום לעברית. בכתב יד הוא טועה לא מעט, אז כדאי לבדוק ולתקן. מה שתתקנו מוצג באתר כ&quot;נבדק בידי המשפחה&quot;, והמחשב לא יכתוב עליו שוב. בדף שעוד לא נקרא אפשר גם להקליד את הטקסט בעצמכם.
+          </p>
+          <ul className="flex flex-col gap-3">
+            {data.pages.map((p) => (
+              <PageEditor
+                key={`${p.memoryId}/${p.file}/${p.ocr?.text.length ?? 0}/${p.translation?.text.length ?? 0}`}
+                page={p}
+                title={data.titles[p.memoryId]?.title ?? ""}
+                busy={busy}
+                onSave={(source, text) => call({ action: "page", memoryId: p.memoryId, file: p.file, source, text }, source === "ocr" ? "המקור נשמר. התרגום יתעדכן בעוד כמה דקות." : "התרגום נשמר.")}
+              />
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {data.texts.some((t) => t.source === "transcript") && (
         <section className="flex flex-col gap-3">
           <button type="button" onClick={() => setShowTexts(!showTexts)} aria-expanded={showTexts} className="inline-flex w-fit items-center gap-2 text-burgundy">
             <FileText className="h-4 w-4" aria-hidden />
-            מה נקרא מהקבצים ({data.texts.length})
+            מה נאמר בהקלטות ({data.texts.filter((t) => t.source === "transcript").length})
           </button>
           {showTexts && (
             <ul className="flex flex-col gap-3">
-              {data.texts.map((t) => (
+              {data.texts.filter((t) => t.source === "transcript").map((t) => (
                 <li key={t.id} className="rounded-lg bg-white p-4 shadow-[var(--shadow-paper)]">
                   <p className="mb-2 text-[0.85rem] text-ink-soft">
                     {t.source === "ocr" ? "הטקסט במכתב / במסמך" : "תמלול ההקלטה"} ·{" "}

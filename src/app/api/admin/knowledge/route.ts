@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/server/auth";
 import { aiAvailable } from "@/server/ai";
-import { enqueueMemory, queueState, runJobs } from "@/server/knowledge";
+import { later } from "@/server/analyze";
+import { enqueueMemory, queueState, runJobs, saveOwnerText } from "@/server/knowledge";
 import { indexFact, indexState } from "@/server/semantic";
 import { factStore, jobStore, store, textStore, type StoredFact } from "@/server/store";
 
@@ -16,7 +17,22 @@ export async function GET(req: Request) {
   if (!(await isAdmin(req))) return json({ error: "unauthorized" }, 401);
   const [facts, texts, memories, queue, ai, index] = await Promise.all([factStore.list(), textStore.list("approved"), store.list(), queueState(), aiAvailable(), indexState()]);
   const titles = Object.fromEntries(memories.map((m) => [m.id, { title: m.title || m.body.slice(0, 60), author: m.author }]));
-  return json({ facts, texts, titles, queue, ai, index });
+  // every photographed page of a letter or recipe, with what was read from it and its Hebrew
+  const pages = memories
+    .filter((m) => m.status !== "rejected" && (m.type === "letter" || m.type === "recipe"))
+    .flatMap((m) =>
+      m.files
+        .filter((f) => f.kind === "image")
+        .map((f) => {
+          const of = (source: "ocr" | "translation") => {
+            const t = texts.find((x) => x.memoryId === m.id && x.file === f.name && x.source === source);
+            return t ? { text: t.text, by: t.by } : undefined;
+          };
+          return { memoryId: m.id, file: f.name, src: `/api/files/memories/${m.id}/${f.thumb ?? f.name}`, full: `/api/files/memories/${m.id}/${f.name}`, ocr: of("ocr"), translation: of("translation"), createdAt: m.createdAt };
+        })
+    )
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return json({ facts, texts, titles, queue, ai, index, pages });
 }
 
 /**
@@ -60,6 +76,18 @@ export async function POST(req: Request) {
       const v = r ? await factStore.setStatus(id, "approved") : undefined;
       if (v) await indexFact(v).catch(() => false);
       return r ? json({ ok: true }) : json({ error: "not found" }, 404);
+    }
+    case "page": {
+      // the owner corrects or writes a page's words, or its Hebrew translation
+      const memoryId = text(b.memoryId, 80) ?? "";
+      const file = text(b.file, 200) ?? "";
+      const source = b.source === "translation" ? "translation" : b.source === "ocr" ? "ocr" : null;
+      const m = memoryId ? await store.get(memoryId) : undefined;
+      if (!m || !source || !m.files.some((f) => f.name === file && f.kind === "image")) return json({ error: "not found" }, 404);
+      const words = typeof b.text === "string" ? b.text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "").slice(0, 20000) : "";
+      await saveOwnerText(memoryId, file, source, words);
+      await later(runJobs({ memoryId, limit: 4 }));
+      return json({ ok: true });
     }
     case "process": {
       const done = await runJobs({ limit: 8 });

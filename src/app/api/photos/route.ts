@@ -33,6 +33,8 @@ export async function GET() {
           contributor: m.author,
           caption: m.title,
           memoryId: m.id,
+          // a photographed letter or recipe: its words can be read on the page
+          hasText: f.kind === "image" && (m.type === "letter" || m.type === "recipe") ? true : undefined,
           file: f.name,
           removalRequested: !!(f.deleteRequest || m.deleteRequest),
         };

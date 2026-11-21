@@ -2,7 +2,7 @@ import "server-only";
 import { profile } from "@/content";
 import { MODELS, base64, budgetLeft, chat, parseJson, runAi } from "./ai";
 import { indexMemory } from "./semantic";
-import { factStore, jobStore, store, textStore, type FactSource, type StoredFact, type StoredJob, type StoredMemory } from "./store";
+import { factStore, jobStore, store, textStore, type FactSource, type StoredFact, type StoredJob, type StoredMemory, type StoredText } from "./store";
 
 /*
   What the site learns from what the family shares.
@@ -58,7 +58,7 @@ export async function enqueueFacts(memoryId: string) {
   await enqueue("index", memoryId);
 }
 
-const ORDER: Record<StoredJob["type"], number> = { ocr: 0, transcribe: 0, facts: 1, index: 2 };
+const ORDER: Record<StoredJob["type"], number> = { ocr: 0, transcribe: 0, translate: 1, facts: 1, index: 2 };
 
 /**
  * Do some of the waiting work. Stops when the day's share of the AI allowance is used; what is
@@ -75,21 +75,40 @@ async function refreshIndexOnce() {
   for (const m of await store.list()) if (m.status !== "rejected") await enqueue("index", m.id);
 }
 
+/** letters read before translations existed get a Hebrew translation, once */
+const TRANSLATE_VERSION = "1";
+async function translateOnce() {
+  if ((await store.getMeta("translate-version").catch(() => undefined)) === TRANSLATE_VERSION) return;
+  await store.setMeta("translate-version", TRANSLATE_VERSION);
+  const texts = await textStore.list("approved");
+  for (const t of texts)
+    if (t.source === "ocr" && !isHebrew(t.text) && !texts.some((o) => o.source === "translation" && o.memoryId === t.memoryId && o.file === t.file)) await enqueue("translate", t.memoryId, t.file);
+}
+
+/** mostly Hebrew letters: nothing to translate */
+export function isHebrew(text: string) {
+  const he = (text.match(/[\u05d0-\u05ea]/g) ?? []).length;
+  const all = (text.match(/\p{L}/gu) ?? []).length;
+  return all > 0 && he / all > 0.5;
+}
+
 export async function runJobs(opts: { memoryId?: string; limit?: number } = {}) {
   await refreshIndexOnce().catch(() => {});
+  await translateOnce().catch(() => {});
   const jobs = (await jobStore.list("pending"))
     .filter((j) => !opts.memoryId || j.memoryId === opts.memoryId)
     .sort((a, b) => ORDER[a.type] - ORDER[b.type] || a.createdAt.localeCompare(b.createdAt));
   let done = 0;
   for (const j of jobs.slice(0, opts.limit ?? 6)) {
     // a memory's facts wait until its letters and recordings are read
-    if ((j.type === "facts" || j.type === "index") && jobs.some((o) => o.memoryId === j.memoryId && ORDER[o.type] < ORDER[j.type] && o.status === "pending" && o.id !== j.id)) continue;
+    if (j.type !== "ocr" && j.type !== "transcribe" && jobs.some((o) => o.memoryId === j.memoryId && ORDER[o.type] < ORDER[j.type] && o.status === "pending" && o.id !== j.id)) continue;
     const budget = j.type === "transcribe" ? "speech" : j.type === "index" ? "embed" : "background";
     if ((await budgetLeft(budget)) <= 0) break;
     let ok: boolean | "skip" = false;
     let error: string | undefined;
     try {
-      ok = j.type === "ocr" ? await readImage(j) : j.type === "transcribe" ? await transcribe(j) : j.type === "index" ? await indexMemory(j.memoryId) : await findFacts(j.memoryId);
+      ok =
+        j.type === "ocr" ? await readImage(j) : j.type === "transcribe" ? await transcribe(j) : j.type === "translate" ? await translate(j) : j.type === "index" ? await indexMemory(j.memoryId) : await findFacts(j.memoryId);
     } catch (e) {
       error = String((e as Error)?.message ?? e).slice(0, 200);
     }
@@ -110,10 +129,28 @@ export async function runJobs(opts: { memoryId?: string; limit?: number } = {}) 
 
 /* ---------- reading and listening ---------- */
 
-async function saveText(j: StoredJob, source: "ocr" | "transcript", text: string, model: string) {
-  const old = (await textStore.list()).filter((t) => t.memoryId === j.memoryId && t.file === j.file && t.source === source);
+async function saveText(j: { memoryId: string; file?: string }, source: StoredText["source"], text: string, model?: string, by?: "owner") {
+  const old = (await textStore.list()).filter((t) => t.memoryId === j.memoryId && t.file === j.file && t.source === source && t.status !== "rejected");
   for (const o of old) await textStore.setStatus(o.id, "rejected");
-  await textStore.create({ memoryId: j.memoryId, file: j.file, source, text: text.slice(0, 20000), model }, [], "approved");
+  await textStore.create({ memoryId: j.memoryId, file: j.file, source, text: text.slice(0, 20000), model, by }, [], "approved");
+}
+
+/** what the owner wrote or corrected stays: the computer does not write over it */
+async function ownerText(memoryId: string, file: string | undefined, source: StoredText["source"]) {
+  return (await textStore.list("approved")).find((t) => t.memoryId === memoryId && t.file === file && t.source === source && t.by === "owner");
+}
+
+/**
+ * The owner corrects (or writes) a page's words or their Hebrew translation. A corrected original
+ * is translated again unless the owner wrote the translation too; the facts are looked for again.
+ */
+export async function saveOwnerText(memoryId: string, file: string, source: "ocr" | "translation", text: string) {
+  const clean = text.trim();
+  if (clean) await saveText({ memoryId, file }, source, clean, undefined, "owner");
+  else for (const t of (await textStore.list("approved")).filter((t) => t.memoryId === memoryId && t.file === file && t.source === source)) await textStore.setStatus(t.id, "rejected");
+  if (source === "ocr" && clean && !isHebrew(clean) && !(await ownerText(memoryId, file, "translation"))) await enqueue("translate", memoryId, file);
+  if (source === "ocr") await enqueue("facts", memoryId);
+  await enqueue("index", memoryId);
 }
 
 /** the words in a photographed letter, recipe or document, in their own language */
@@ -121,6 +158,7 @@ async function readImage(j: StoredJob): Promise<boolean | "skip"> {
   const m = await store.get(j.memoryId);
   const f = m?.files.find((x) => x.name === j.file);
   if (!m || !f) return "skip";
+  if (await ownerText(m.id, f.name, "ocr")) return "skip";
   // the original, if it is small enough to send, keeps small handwriting readable
   const src = f.size <= MAX_IMAGE ? f.name : f.thumb;
   const bytes = src ? await store.readFile(m.id, src) : undefined;
@@ -142,6 +180,38 @@ async function readImage(j: StoredJob): Promise<boolean | "skip"> {
   const clean = text.trim();
   if (!clean || /^NO_TEXT/.test(clean)) return true;
   await saveText(j, "ocr", clean, MODELS.vision);
+  if (!isHebrew(clean)) await enqueue("translate", j.memoryId, j.file);
+  return true;
+}
+
+/**
+ * A page's words in Hebrew, by the larger model (better Hebrew). Kept line by line, so a poem
+ * stays a poem; what could not be read stays [?]. Shown as a computer's translation.
+ */
+async function translate(j: StoredJob): Promise<boolean | "skip"> {
+  if (await ownerText(j.memoryId, j.file, "translation")) return "skip";
+  const texts = (await textStore.list("approved")).filter((t) => t.memoryId === j.memoryId && t.file === j.file);
+  const original = texts.find((t) => t.source === "ocr")?.text;
+  if (!original || isHebrew(original)) return "skip";
+  const answer = await chat(
+    "background",
+    [
+      {
+        role: "system",
+        content: `You translate family papers of grandfather Lonya (letters, poems, greetings, mostly in Russian) into natural, warm modern Hebrew.
+Rules:
+- Translate everything, line by line: keep the same line breaks and stanzas, so a poem stays a poem. Do not try to rhyme; keep the meaning and the feeling.
+- Keep names as names, written in Hebrew letters (Циля → צילה, Динка → דינקה), and keep dates and numbers as they are.
+- Where the text has [?], keep [?]. Do not guess missing words, do not explain, summarise or add anything.
+- Reply with the Hebrew translation only.`,
+      },
+      { role: "user", content: original },
+    ],
+    { maxTokens: 2500, temperature: 0.2, model: MODELS.voice }
+  );
+  if (answer === null) return false;
+  const he = answer.trim();
+  if (he && isHebrew(he)) await saveText(j, "translation", he, MODELS.voice);
   return true;
 }
 
@@ -178,7 +248,7 @@ async function corpus(m: StoredMemory) {
       const t = [n.what, n.place && `מקום: ${n.place}`, n.when && `מתי: ${n.when}`, n.who && `מי: ${n.who}`].filter(Boolean).join(". ");
       if (t) parts.push({ kind: "note", file: f.name, text: t });
     }
-  for (const t of await textStore.list("approved")) if (t.memoryId === m.id) parts.push({ kind: t.source, file: t.file, text: t.text });
+  for (const t of await textStore.list("approved")) if (t.memoryId === m.id && t.source !== "translation") parts.push({ kind: t.source, file: t.file, text: t.text });
   return parts;
 }
 

@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     return json({ answer: unknown, sources: [], known: false });
   }
 
-  const label = { tree: "the family tree", fact: "verified fact", memory: "a family memory", note: "what the family told about a photo", ocr: "text read from a letter (may contain reading errors)", transcript: "transcript of a recording (may contain errors)" };
+  const label = { tree: "the family tree", fact: "verified fact", memory: "a family memory", note: "what the family told about a photo", ocr: "text read from a letter (may contain reading errors)", transcript: "transcript of a recording (may contain errors)", translation: "Hebrew translation of a letter, made by a computer (may contain errors)" };
   const context = sourcesAll.map((s) => `[${s.n}] (${label[s.kind]}${s.author ? `, by ${s.author}` : ""}) ${s.text}`).join("\n");
   const phrase = await phraseForAnswer();
   const answer = await chat(

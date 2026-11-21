@@ -1,5 +1,6 @@
 "use client";
 
+import PageReading from "./memories/PageReading";
 import { useMemo, useState } from "react";
 import { MessageSquarePlus } from "lucide-react";
 import type { Photo } from "@/content/types";
@@ -175,6 +176,7 @@ export default function PhotoInfo({ photo, onChange, onJump }: { photo: Photo; o
         </blockquote>
       )}
 
+      {photo.hasText && photo.memoryId && <PageReading key={`t-${photo.id}`} memoryId={photo.memoryId} />}
       {photo.transcript && (
         <section className="flex flex-col gap-2">
           <h3 className="label">{t.memories.transcript}</h3>

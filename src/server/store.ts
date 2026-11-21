@@ -196,7 +196,16 @@ export const familyStore: Store<StoredPerson> = lazy<StoredPerson>("family");
 /* ---------- what the site learns from the archive (see server/knowledge) ---------- */
 
 /** text read out of a file: a letter's words (ocr) or what is said in a recording (transcript) */
-export type StoredText = Base & { memoryId: string; file?: string; source: "ocr" | "transcript"; text: string; model?: string };
+export type StoredText = Base & {
+  memoryId: string;
+  file?: string;
+  /** a letter's words (ocr), what a recording says (transcript), or a letter's words in Hebrew (translation) */
+  source: "ocr" | "transcript" | "translation";
+  text: string;
+  model?: string;
+  /** written or corrected by the site's owner, not by the computer */
+  by?: "owner";
+};
 
 /** "family": a family member told it directly ("tell me"), quote = the question it answers, by = their name */
 export type FactSource = { memoryId: string; file?: string; kind: "memory" | "note" | "ocr" | "transcript" | "owner" | "family"; quote?: string; by?: string };
@@ -216,10 +225,10 @@ export type StoredFact = Base & {
 };
 
 /** a piece of the archive in "meaning space" (an embedding), so search can find it by sense, not only by words */
-export type StoredVector = Base & { kind: "memory" | "note" | "ocr" | "transcript" | "fact"; memoryId?: string; file?: string; factId?: string; text: string; vec: string };
+export type StoredVector = Base & { kind: "memory" | "note" | "ocr" | "transcript" | "translation" | "fact"; memoryId?: string; file?: string; factId?: string; text: string; vec: string };
 
 /** background work waiting to be done. status: pending = to do, approved = done, rejected = gave up */
-export type StoredJob = Base & { type: "ocr" | "transcribe" | "facts" | "index"; memoryId: string; file?: string; attempts: number; error?: string };
+export type StoredJob = Base & { type: "ocr" | "transcribe" | "translate" | "facts" | "index"; memoryId: string; file?: string; attempts: number; error?: string };
 
 /** People named in photos and memories who are not (yet) in the family tree: one shared list. */
 export type StoredName = Base & { name: string; addedBy?: string };

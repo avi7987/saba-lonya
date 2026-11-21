@@ -43,6 +43,8 @@ export type Photo = {
   notes?: { at: string; by?: string; people?: string[]; who?: string; when?: string; was?: string; place?: string; what?: string }[];
   when?: PhotoDate;
   memoryId?: string;
+  /** a photographed letter or recipe, whose words were read (and translated) */
+  hasText?: boolean;
   /** stored file name within the memory (for dating and removal requests) */
   file?: string;
   removalRequested?: boolean;
