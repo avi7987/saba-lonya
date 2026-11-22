@@ -195,19 +195,16 @@ function Undated({ photos }: { photos: Photo[] }) {
 export default function LifeStory() {
   const { t, lang } = useLang();
   const { photos: all, loaded } = usePhotos();
-  const photos = useMemo(() => all.filter((p) => p.kind !== "audio"), [all]);
+  // photos and videos only: letters, poems and what was learned from them live in the memories
+  const photos = useMemo(() => all.filter((p) => p.kind !== "audio" && !p.hasText), [all]);
   const [notes, setNotes] = useState<Notes>({});
-  const [facts, setFacts] = useState<Fact[]>([]);
+  const facts = useMemo<Fact[]>(() => [], []);
 
   useEffect(() => {
     if (STATIC) return;
     fetch("/api/story")
       .then((r) => (r.ok ? r.json() : { decades: {} }))
       .then((d: { decades: Notes }) => setNotes(d.decades ?? {}))
-      .catch(() => {});
-    fetch("/api/facts")
-      .then((r) => (r.ok ? r.json() : { facts: [] }))
-      .then((d: { facts: Fact[] }) => setFacts(d.facts ?? []))
       .catch(() => {});
   }, []);
 
