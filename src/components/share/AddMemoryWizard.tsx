@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, Camera, ChevronLeft, ChevronRight, ChefHat, FileAudio, FileVideo, Images, Lightbulb, Mail, MessageCircleHeart, Mic, PenLine, Square, Upload, Video, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, ChevronLeft, ChevronRight, Hourglass, ChefHat, FileAudio, FileVideo, Images, Lightbulb, Mail, MessageCircleHeart, Mic, PenLine, Square, Upload, Video, X } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { ACCEPT, LIMITS, PICK_MB, SEND_MB, kindOf } from "@/lib/limits";
 import { ease } from "@/lib/motion";
@@ -443,6 +443,17 @@ export default function AddMemoryWizard() {
 
   const ids = { name: `${uid}-name`, rel: `${uid}-rel`, title: `${uid}-title`, mem: `${uid}-mem`, files: `${uid}-files` };
 
+  // what the site still does after the upload, so nobody expects to see it the moment it is sent
+  const sentFiles = files.filter((f) => !blocked(f));
+  const later =
+    isText(type) && sentFiles.some((f) => f.kind === "image")
+      ? s.laterPages(sentFiles.filter((f) => f.kind === "image").length)
+      : sentFiles.some((f) => f.kind === "audio" || f.kind === "video")
+        ? s.laterSound
+        : sentFiles.some((f) => f.kind === "image")
+          ? s.laterPhotos
+          : "";
+
   if (state === "done")
     return (
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease }} className="flex flex-col items-center gap-5 py-10 text-center" role="status">
@@ -451,6 +462,14 @@ export default function AddMemoryWizard() {
         <p className="max-w-md text-lg text-ink-soft">{type === "info" ? s.doneInfo : type === "words" ? s.doneWords : s.doneLead}</p>
         {STATIC && <p className="max-w-md text-[0.88rem] text-rose">{s.demoNote}</p>}
         {skipped > 0 && <p className="max-w-md text-[0.92rem] text-ink-soft">{s.skipped(skipped)}</p>}
+        {later && (
+          <p className="flex max-w-md items-start gap-2.5 rounded-[12px] bg-blush/40 px-4 py-3 text-start text-[0.98rem] leading-relaxed text-charcoal">
+            <Hourglass className="mt-1 h-4 w-4 shrink-0 text-rose" aria-hidden />
+            <span>
+              {later} {s.laterClose}
+            </span>
+          </p>
+        )}
         <button type="button" onClick={reset} className={cn(buttonClass.secondary, "mt-4")}>
           {s.another}
         </button>
@@ -934,9 +953,15 @@ export default function AddMemoryWizard() {
               <button type="button" onClick={submit} disabled={state === "sending" || preparing} className={cn(buttonClass.primary, "relative min-h-14 justify-center overflow-hidden px-8 disabled:opacity-90")}>
                 {state === "sending" && <span aria-hidden className="absolute inset-y-0 start-0 bg-burgundy/60 transition-[width] duration-300" style={{ width: `${progress}%` }} />}
                 <span className="relative" aria-live="polite">
-                  {state === "sending" ? (files.length ? w.uploading(progress) : s.sending) : s.submit}
+                  {state === "sending" ? (files.length ? (progress >= 100 ? s.finishing : w.uploading(progress)) : s.sending) : s.submit}
                 </span>
               </button>
+            )}
+            {state === "sending" && (
+              <p className="basis-full text-center text-[0.9rem] leading-relaxed text-ink-soft">
+                {files.length > 0 && progress < 100 && <b className="font-normal text-burgundy">{s.laterKeepOpen} </b>}
+                {later}
+              </p>
             )}
           </div>
         </div>

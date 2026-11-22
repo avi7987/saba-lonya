@@ -22,7 +22,9 @@ const sectionId = (key: string) => `album-${key}`;
 
 function Browser() {
   const { t, lang } = useLang();
-  const { photos, loaded } = usePhotos();
+  const { photos: all, loaded } = usePhotos();
+  // the album is photos and videos only: pages of writing (poems, letters) and recordings live in the memories
+  const photos = useMemo(() => all.filter((p) => p.kind !== "audio" && !p.hasText), [all]);
   const { open } = useLightbox();
   const [kind, setKind] = useState<Kind>("all");
   const [active, setActive] = useState<string>("top");

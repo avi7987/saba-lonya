@@ -41,7 +41,7 @@ export default function SortView() {
     } catch {}
   }, []);
 
-  const visual = useMemo(() => photos.filter((p) => p.kind !== "audio" && p.memoryId && p.file), [photos]);
+  const visual = useMemo(() => photos.filter((p) => p.kind !== "audio" && !p.hasText && p.memoryId && p.file), [photos]);
   const shown = useMemo(() => visual.filter((p) => (filter === "undated" ? undated(p) : filter === "untagged" ? untagged(p) : true)), [visual, filter]);
   const counts = { undated: visual.filter(undated).length, untagged: visual.filter(untagged).length, all: visual.length };
 
