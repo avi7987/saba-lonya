@@ -26,8 +26,10 @@ async function reading(id: string) {
         src: `/api/files/memories/${id}/${f.thumb ?? f.name}`,
         original: original?.text,
         originalChecked: original?.by === "owner",
+        originalCareful: original?.by === "careful",
         he: he?.text,
         heChecked: he?.by === "owner",
+        heCareful: he?.by === "careful",
       };
     })
     .filter((p) => p.original || p.he);

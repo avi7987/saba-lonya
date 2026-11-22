@@ -14,7 +14,7 @@ type Data = {
   pages: PageText[];
 };
 
-type PageText = { order?: { by: "user" | "owner" | "ai"; reason?: string }; memoryId: string; file: string; src: string; full: string; ocr?: { text: string; by?: "owner" }; translation?: { text: string; by?: "owner" } };
+type PageText = { order?: { by: "user" | "owner" | "ai"; reason?: string }; memoryId: string; file: string; src: string; full: string; ocr?: { text: string; by?: "owner" | "careful" }; translation?: { text: string; by?: "owner" | "careful" } };
 
 /**
  * One photographed page: what the computer read and its Hebrew, side by side, each one editable.
@@ -25,7 +25,7 @@ function PageEditor({ page, title, busy, onSave, pos, count, onMove }: { page: P
   const [ocr, setOcr] = useState(page.ocr?.text ?? "");
   const [he, setHe] = useState(page.translation?.text ?? "");
   const field = "min-h-56 w-full rounded-md border border-charcoal/20 bg-white px-3 py-2 text-[0.95rem] leading-relaxed";
-  const status = (t?: { by?: "owner" }) => (!t ? "עוד אין" : t.by === "owner" ? "נבדק בידיכם" : "נעשה במחשב, כדאי לבדוק");
+  const status = (t?: { by?: "owner" | "careful" }) => (!t ? "עוד אין" : t.by === "owner" ? "נבדק בידיכם" : t.by === "careful" ? "נקרא בקפידה (Claude)" : "נעשה במחשב, כדאי לבדוק");
   const changedOcr = ocr.trim() !== (page.ocr?.text ?? "").trim();
   const changedHe = he.trim() !== (page.translation?.text ?? "").trim();
   return (
@@ -265,6 +265,58 @@ function QuizEditor({ token, onDone }: { token: string; onDone: (msg: string) =>
   );
 }
 
+/**
+ * Careful reading by Claude: how many pages wait for it, when it last ran, and a button that starts
+ * it now (it also runs by itself every night). It runs on the owner's own Claude subscription.
+ */
+function CarefulPanel({ token, onDone }: { token: string; onDone: (msg: string) => void }) {
+  const [s, setS] = useState<{ waiting: number; last: string | null; started: string | null; button: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const load = useCallback(async () => {
+    const r = await fetch("/api/admin/careful?limit=60", { headers: { "x-admin-token": token } }).catch(() => null);
+    if (r?.ok) setS(await r.json());
+  }, [token]);
+  useEffect(() => void load(), [load]);
+  const when = (iso: string | null) => (iso ? new Date(iso).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" }) : "עוד לא");
+  const run = async () => {
+    setBusy(true);
+    const r = await fetch("/api/admin/careful", { method: "POST", headers: { "x-admin-token": token, "Content-Type": "application/json" }, body: JSON.stringify({ action: "run" }) }).catch(() => null);
+    setBusy(false);
+    const d = r ? await r.json().catch(() => ({})) : {};
+    if (r?.ok) onDone(d.waiting ? `התחיל. ${d.waiting === 1 ? "הדף ייקרא" : `${d.waiting} הדפים ייקראו`} ויתורגמו בקפידה בעוד כמה דקות.` : "אין כרגע דפים שמחכים.");
+    else if (r?.status === 429) onDone("הקריאה כבר התחילה לפני רגע. אפשר ללחוץ שוב בעוד שתי דקות.");
+    else if (r?.status === 409) onDone("הכפתור עוד לא מחובר. צריך להגדיר את מפתח ההפעלה ב-Cloudflare.");
+    else onDone("לא הצלחנו להפעיל את הקריאה. נסו שוב בעוד כמה דקות.");
+    await load();
+  };
+  if (!s) return null;
+  return (
+    <section className="flex flex-col gap-3 rounded-lg bg-white p-5 shadow-[var(--shadow-paper)]">
+      <h2 className="flex items-center gap-2 font-display text-2xl text-burgundy">
+        <Sparkles className="h-5 w-5" aria-hidden />
+        קריאה ותרגום מדויקים (Claude)
+      </h2>
+      <p className="max-w-3xl text-ink-soft">
+        דפים כתובים (שירים, מכתבים, ברכות) נקראים ומתורגמים בקפידה בידי Claude, דרך המנוי שלכם. זה קורה לבד כל לילה, ואפשר גם להפעיל עכשיו. עד אז מוצג באתר התרגום המהיר, שמסומן &quot;תורגם במחשב&quot;.
+      </p>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[0.95rem]">
+        <span>
+          מחכים לקריאה: <b className="text-burgundy">{s.waiting}</b> {s.waiting === 1 ? "דף" : "דפים"}
+        </span>
+        <span className="text-ink-soft">קריאה אחרונה: {when(s.last)}</span>
+      </div>
+      {s.button ? (
+        <button type="button" onClick={run} disabled={busy || !s.waiting} className="inline-flex min-h-11 w-fit items-center gap-2 rounded-full bg-burgundy px-5 text-white disabled:opacity-50">
+          <RefreshCw className={cn("h-4 w-4", busy && "animate-spin")} aria-hidden />
+          {busy ? "מפעילים…" : "קריאה ותרגום מדויקים עכשיו"}
+        </button>
+      ) : (
+        <p className="rounded-md bg-[#f6ead2] p-3 text-[0.92rem] text-[#6b4a12]">הכפתור עוד לא מחובר: צריך להגדיר ב-Cloudflare את CLAUDE_TASK_URL ואת CLAUDE_TASK_TOKEN. הקריאה הלילית עובדת גם בלי זה.</p>
+      )}
+    </section>
+  );
+}
+
 export default function KnowledgeManager({ token, onDone }: { token: string; onDone: (msg: string) => void }) {
   const [data, setData] = useState<Data | null>(null);
   const [tab, setTab] = useState<(typeof TABS)[number][0]>("pending");
@@ -306,6 +358,7 @@ export default function KnowledgeManager({ token, onDone }: { token: string; onD
         &quot;הצעה&quot; עד שאתם מאשרים אותה. רק עובדות מאומתות משמשות לכתיבת סיפור החיים ולתשובות על שאלות.
       </p>
 
+      <CarefulPanel token={token} onDone={onDone} />
       <VoiceEditor token={token} onDone={onDone} />
       <QuizEditor token={token} onDone={onDone} />
 

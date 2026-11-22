@@ -213,7 +213,7 @@ export async function runJobs(opts: { memoryId?: string; limit?: number; until?:
 
 /* ---------- reading and listening ---------- */
 
-async function saveText(j: { memoryId: string; file?: string }, source: StoredText["source"], text: string, model?: string, by?: "owner") {
+async function saveText(j: { memoryId: string; file?: string }, source: StoredText["source"], text: string, model?: string, by?: StoredText["by"]) {
   const old = (await textStore.list()).filter((t) => t.memoryId === j.memoryId && t.file === j.file && t.source === source && t.status !== "rejected");
   for (const o of old) await textStore.setStatus(o.id, "rejected");
   await textStore.create({ memoryId: j.memoryId, file: j.file, source, text: text.slice(0, 20000), model, by }, [], "approved");
@@ -221,7 +221,8 @@ async function saveText(j: { memoryId: string; file?: string }, source: StoredTe
 
 /** what the owner wrote or corrected stays: the computer does not write over it */
 async function ownerText(memoryId: string, file: string | undefined, source: StoredText["source"]) {
-  return (await textStore.list("approved")).find((t) => t.memoryId === memoryId && t.file === file && t.source === source && t.by === "owner");
+  // the owner's words and a careful reading are both kept from the free model's work
+  return (await textStore.list("approved")).find((t) => t.memoryId === memoryId && t.file === file && t.source === source && (t.by === "owner" || t.by === "careful"));
 }
 
 /**
@@ -421,7 +422,7 @@ async function transcribe(j: StoredJob): Promise<boolean | "skip"> {
 
 /* ---------- facts ---------- */
 
-type Raw = { statement_he?: string; statement_ru?: string; category?: string; year?: number | null; place?: string | null; quote?: string };
+export type Raw = { statement_he?: string; statement_ru?: string; category?: string; year?: number | null; place?: string | null; quote?: string };
 
 /** everything written about one memory: the words, what the family added, letters and recordings */
 async function corpus(m: StoredMemory) {
@@ -513,7 +514,15 @@ Reply with ONLY a JSON object:
     { maxTokens: 12000, temperature: 0.1, model: MODELS.pages }
   );
   if (answer === null) return false;
-  const parsed = parseJson<{ about?: About; facts?: Raw[] } | Raw[]>(answer);
+  return storeFindings(m, parseJson<{ about?: About; facts?: Raw[] } | Raw[]>(answer), page, parts, MODELS.pages);
+}
+
+/**
+ * Keeps what was found in one memory: what it is ("about") and the facts, each only with words that
+ * really appear in it. Used for the computer's own look, and for the careful reading (see careful.ts).
+ */
+export async function storeFindings(m: StoredMemory, parsed: { about?: About; facts?: Raw[] } | Raw[] | null, page: boolean, parts?: Awaited<ReturnType<typeof corpus>>, model?: string) {
+  parts ??= await corpus(m);
   if (!parsed) return true;
   const raw = Array.isArray(parsed) ? parsed : Array.isArray(parsed.facts) ? parsed.facts : [];
   const about = !Array.isArray(parsed) ? parsed.about : undefined;
@@ -521,7 +530,7 @@ Reply with ONLY a JSON object:
     const str = (v: unknown, n: number) => (typeof v === "string" && v.trim() && v.trim() !== "null" ? v.trim().slice(0, n) : undefined);
     const list = (v: unknown, n = 120) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && !!x.trim()).map((x) => x.trim().slice(0, n)).slice(0, 20) : undefined);
     const clean: About = { kind: str(about.kind, 20), to: str(about.to, 120), date: str(about.date, 60), place: str(about.place, 120), summary_he: str(about.summary_he, 800), summary_ru: str(about.summary_ru, 800), people: list(about.people), places: list(about.places), notes_he: list(about.notes_he, 300), notes_ru: list(about.notes_ru, 300) };
-    if (clean.summary_he || clean.summary_ru) await saveText({ memoryId: m.id }, "about", JSON.stringify(clean), MODELS.pages);
+    if (clean.summary_he || clean.summary_ru) await saveText({ memoryId: m.id }, "about", JSON.stringify(clean), model);
   }
 
   const existing = await factStore.list();
@@ -565,4 +574,104 @@ export async function queueState() {
     failed: all.filter((j) => j.status === "rejected").map((j) => ({ id: j.id, type: j.type, memoryId: j.memoryId, error: j.error })),
     budget: { background: await budgetLeft("background"), speech: await budgetLeft("speech"), embed: await budgetLeft("embed") },
   };
+}
+
+/* ---------- careful reading (Claude, through the owner's own Claude Code subscription) ---------- */
+
+/*
+  The free model reads handwriting poorly. A scheduled Claude Code task (on the owner's own
+  subscription, once a night or when the owner presses the button) takes the pages that were not
+  yet read carefully, reads and translates them, and sends back the words, the Hebrew, the pages'
+  order, what the memory is and the facts in it. What it sends is marked "careful": the free
+  model's work never writes over it, and only the owner's own correction does.
+*/
+
+const kept = (t: StoredText) => t.by === "owner" || t.by === "careful";
+
+/** pages of writing not read carefully (or by the owner) yet, a memory at a time */
+export async function pendingPages(limit = 20) {
+  const texts = await textStore.list("approved");
+  const out: { memoryId: string; title?: string; author: string; type?: string; arranged: boolean; pages: { file: string; position: number; url: string; draft?: string }[] }[] = [];
+  let count = 0;
+  for (const m of await store.list()) {
+    if (m.status === "rejected" || !readsPages(m)) continue;
+    const pages = pageFiles(m).filter((f) => f.page || m.type === "letter" || m.type === "recipe");
+    const mine = texts.filter((t) => t.memoryId === m.id);
+    const done = (name: string) => {
+      const o = mine.find((t) => t.file === name && t.source === "ocr" && kept(t));
+      return !!o && (isHebrew(o.text) || mine.some((t) => t.file === name && t.source === "translation" && kept(t)));
+    };
+    if (!pages.length || pages.every((f) => done(f.name))) continue;
+    out.push({
+      memoryId: m.id,
+      title: m.title,
+      author: m.author,
+      type: m.type,
+      arranged: !!m.pageOrder && m.pageOrder.by !== "ai",
+      pages: pages.map((f, i) => ({ file: f.name, position: i + 1, url: `/api/files/memories/${m.id}/${f.name}`, draft: mine.find((t) => t.file === f.name && t.source === "ocr")?.text })),
+    });
+    count += pages.length;
+    if (count >= limit) break;
+  }
+  return out;
+}
+
+export type CarefulResult = {
+  memoryId: string;
+  pages: { file: string; original?: string; he?: string }[];
+  /** the pages' file names, first to last (ignored when arranged by hand) */
+  order?: string[];
+  orderReason?: string;
+  about?: About;
+  facts?: Raw[];
+};
+
+/** keeps a careful reading of one memory's pages */
+export async function saveCareful(r: CarefulResult) {
+  const m = await store.get(r.memoryId);
+  if (!m || m.status === "rejected") return { ok: false, error: "not found" };
+  const texts = (await textStore.list("approved")).filter((t) => t.memoryId === m.id);
+  const owner = (file: string, source: StoredText["source"]) => texts.some((t) => t.file === file && t.source === source && t.by === "owner");
+  const names = new Set(m.files.filter((f) => f.kind === "image").map((f) => f.name));
+  let saved = 0;
+  for (const p of r.pages ?? []) {
+    if (!names.has(p.file)) continue;
+    const original = typeof p.original === "string" ? p.original.trim().slice(0, 20000) : "";
+    const he = typeof p.he === "string" ? p.he.trim().slice(0, 20000) : "";
+    if (original && !owner(p.file, "ocr")) await saveText({ memoryId: m.id, file: p.file }, "ocr", original, "claude", "careful");
+    if (he && !owner(p.file, "translation")) await saveText({ memoryId: m.id, file: p.file }, "translation", he, "claude", "careful");
+    if (original || he) saved++;
+  }
+  // the pages are pages of writing (whatever kind of memory they were shared as)
+  const touched = new Set((r.pages ?? []).map((p) => p.file));
+  await store.update(m.id, (cur) => ({ ...cur, files: cur.files.map((f) => (touched.has(f.name) ? { ...f, page: true } : f)) }));
+
+  // their order, unless someone arranged them by hand
+  const fresh = await store.get(m.id);
+  if (fresh && Array.isArray(r.order) && (!fresh.pageOrder || fresh.pageOrder.by === "ai")) {
+    const pages = pageFiles(fresh).map((f) => f.name);
+    const order = r.order.filter((n) => typeof n === "string");
+    if (order.length === pages.length && pages.every((n) => order.includes(n))) {
+      await store.update(m.id, (cur) => {
+        const queue = [...order];
+        const files = cur.files.map((f) => {
+          if (!order.includes(f.name)) return f;
+          const next = queue.shift();
+          return cur.files.find((x) => x.name === next) ?? f;
+        });
+        return { ...cur, files, pageOrder: { by: "ai", reason: typeof r.orderReason === "string" ? r.orderReason.slice(0, 200) : undefined } };
+      });
+    }
+  }
+
+  // the free model's waiting work on this memory is no longer needed, and its unchecked guesses give way
+  for (const j of await jobStore.list("pending")) if (j.memoryId === m.id && j.type !== "index" && j.type !== "transcribe") await jobStore.setStatus(j.id, "rejected");
+  if (r.facts?.length || r.about) {
+    for (const f of await factStore.list("pending")) if (f.by === "ai" && f.sources.length && f.sources.every((s) => s.memoryId === m.id)) await factStore.setStatus(f.id, "rejected");
+    const latest = await store.get(m.id);
+    if (latest) await storeFindings(latest, { about: r.about, facts: r.facts ?? [] }, true, undefined, "claude");
+  }
+  await enqueue("index", m.id);
+  await store.setMeta("careful-last", new Date().toISOString());
+  return { ok: true, saved };
 }

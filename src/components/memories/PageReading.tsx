@@ -11,7 +11,7 @@ import { cn } from "../ui";
   what was learned about Lonya from this memory. Fetched only when opened.
 */
 
-type Page = { file: string; src: string; original?: string; originalChecked: boolean; he?: string; heChecked: boolean };
+type Page = { file: string; src: string; original?: string; originalChecked: boolean; originalCareful?: boolean; he?: string; heChecked: boolean; heCareful?: boolean };
 type Fact = { id: string; he: string; ru?: string; year?: number; place?: string; verified: boolean };
 type About = { kind?: string; to?: string; date?: string; place?: string; summary_he?: string; summary_ru?: string; people?: string[]; places?: string[]; notes_he?: string[]; notes_ru?: string[] };
 type Reading = { pages: Page[]; facts: Fact[]; about?: About; order?: { by: "user" | "owner" | "ai"; reason?: string }; waiting: boolean };
@@ -56,6 +56,7 @@ export default function PageReading({ memoryId, className }: { memoryId: string;
   const p = data?.pages[Math.min(page, (data?.pages.length ?? 1) - 1)];
   const shown = p ? (view === "he" ? p.he : p.original) : undefined;
   const checked = p ? (view === "he" ? p.heChecked : p.originalChecked) : false;
+  const careful = p ? (view === "he" ? p.heCareful : p.originalCareful) : false;
   const tab = (on: boolean) => cn("min-h-9 rounded-full px-3.5 text-[0.88rem] transition-colors", on ? "bg-burgundy text-white" : "text-burgundy hover:bg-white/80");
 
   return (
@@ -102,7 +103,7 @@ export default function PageReading({ memoryId, className }: { memoryId: string;
               ) : (
                 <p className="text-[0.9rem] text-ink-soft">{view === "he" ? t.memories.pageNoHebrew : t.memories.pageEmpty}</p>
               )}
-              {shown && <p className="text-[0.78rem] text-ink-soft">{checked ? t.memories.pageChecked : view === "he" ? t.memories.pageMachineHe : t.memories.pageMachineRead}</p>}
+              {shown && <p className="text-[0.78rem] text-ink-soft">{checked ? t.memories.pageChecked : careful ? t.memories.pageCareful : view === "he" ? t.memories.pageMachineHe : t.memories.pageMachineRead}</p>}
             </>
           )}
 

@@ -217,8 +217,8 @@ export type StoredText = Base & {
   source: "ocr" | "transcript" | "translation" | "about";
   text: string;
   model?: string;
-  /** written or corrected by the site's owner, not by the computer */
-  by?: "owner";
+  /** written or corrected by the site's owner, or read carefully by Claude (the owner's own subscription), not by the free model */
+  by?: "owner" | "careful";
 };
 
 /** "family": a family member told it directly ("tell me"), quote = the question it answers, by = their name */
