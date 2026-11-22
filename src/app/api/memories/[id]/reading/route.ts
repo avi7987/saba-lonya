@@ -24,6 +24,7 @@ async function reading(id: string) {
       return {
         file: f.name,
         src: `/api/files/memories/${id}/${f.thumb ?? f.name}`,
+        full: `/api/files/memories/${id}/${f.name}`,
         original: original?.text,
         originalChecked: original?.by === "owner",
         originalCareful: original?.by === "careful",

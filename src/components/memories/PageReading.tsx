@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileText, Lightbulb } from "lucide-react";
+import { BookOpen, FileText, Lightbulb } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { cn } from "../ui";
+import BookReader from "./BookReader";
 
 /*
   The words on a photographed page (a letter, a poem, a greeting): as written, and in Hebrew, each
@@ -16,7 +17,7 @@ type Fact = { id: string; he: string; ru?: string; year?: number; place?: string
 type About = { kind?: string; to?: string; date?: string; place?: string; summary_he?: string; summary_ru?: string; people?: string[]; places?: string[]; notes_he?: string[]; notes_ru?: string[] };
 type Reading = { pages: Page[]; facts: Fact[]; about?: About; order?: { by: "user" | "owner" | "ai"; reason?: string }; waiting: boolean };
 
-export default function PageReading({ memoryId, className }: { memoryId: string; className?: string }) {
+export default function PageReading({ memoryId, title, author, className }: { memoryId: string; title?: string; author?: string; className?: string }) {
   const { t, lang } = useLang();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState<Reading | null>(null);
@@ -25,6 +26,7 @@ export default function PageReading({ memoryId, className }: { memoryId: string;
   const [view, setView] = useState<"he" | "original">(lang === "ru" ? "original" : "he");
   const [learned, setLearned] = useState(false);
   const [working, setWorking] = useState(false);
+  const [book, setBook] = useState(false);
 
   // fetched once, the first time it is opened; the work goes on even if it is closed again meanwhile
   const started = useRef(false);
@@ -97,7 +99,8 @@ export default function PageReading({ memoryId, className }: { memoryId: string;
               </div>
               {data!.order?.by === "ai" && <p className="text-[0.78rem] text-ink-soft">{t.memories.orderByAi}{data!.order.reason ? `: ${data!.order.reason}` : ""}</p>}
               {shown ? (
-                <p dir="auto" lang={view === "he" ? "he" : undefined} className="whitespace-pre-line rounded-[10px] bg-white/75 p-4 text-[1rem] leading-[1.9] text-charcoal/90 ring-1 ring-charcoal/5">
+                // Hebrew always right to left, even when it opens with a page number ("43", "II")
+                <p dir={view === "he" ? "rtl" : "auto"} lang={view === "he" ? "he" : undefined} className="whitespace-pre-line rounded-[10px] bg-white/75 p-4 text-[1rem] leading-[1.9] text-charcoal/90 ring-1 ring-charcoal/5">
                   {shown}
                 </p>
               ) : (
@@ -107,6 +110,13 @@ export default function PageReading({ memoryId, className }: { memoryId: string;
             </>
           )}
 
+          {p && (
+            <button type="button" onClick={() => setBook(true)} className="inline-flex min-h-10 w-fit items-center gap-2 rounded-full bg-burgundy px-4 text-[0.9rem] text-white transition-colors hover:bg-[#2c3d60]">
+              <BookOpen className="h-4 w-4" aria-hidden />
+              {t.book.open}
+            </button>
+          )}
+          {book && <BookReader entries={[{ memoryId, title, author }]} onClose={() => setBook(false)} />}
           {data && (
             <div>
               <button type="button" onClick={() => setLearned(!learned)} aria-expanded={learned} className="inline-flex min-h-9 items-center gap-1.5 rounded-full px-1 text-[0.85rem] text-sage-deep underline decoration-dusty/40 underline-offset-4 hover:text-burgundy">

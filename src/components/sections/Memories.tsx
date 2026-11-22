@@ -111,7 +111,7 @@ export function MemoryCard({ m, index = 0, className }: { m: Memory; index?: num
       </>
       )}
 
-      {m.hasPages && !m.placeholder && <PageReading memoryId={m.id} className="mt-4" />}
+      {m.hasPages && !m.placeholder && <PageReading memoryId={m.id} title={m.title} author={m.author} className="mt-4" />}
       {m.mediaKind === "audio" && m.mediaSrc && <AudioPlayer src={m.mediaSrc} title={m.title || m.author} className="mt-5" />}
       {m.mediaKind === "video" && m.mediaSrc && (
         <video src={m.mediaSrc} controls playsInline preload="metadata" className="mt-5 w-full rounded-[var(--radius-photo)] bg-black" />

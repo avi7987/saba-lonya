@@ -51,6 +51,7 @@ const LINKS = [
   { id: "story", key: "story", href: "/#story" },
   { id: "gallery", key: "gallery", href: "/gallery" },
   { id: "memories", key: "memories", href: "/memories" },
+  { id: "writings", key: "writings", href: "/writings" },
   { id: "family", key: "family", href: "/family" },
   { id: "questions", key: "questions", href: "/questions" },
 ] as const;
@@ -100,7 +101,7 @@ export default function Header() {
   }, [open]);
 
   const pathname = usePathname();
-  const navActive = (id: string) => (id === "family" && pathname.startsWith("/family")) || (id === "questions" && pathname.startsWith("/questions")) || (id === "memories" && pathname.startsWith("/memories")) || active === id || (id === "story" && active === "timeline") || (id === "gallery" && active === "media") || (id === "memories" && (active === "letters" || active === "contribute"));
+  const navActive = (id: string) => (id === "family" && pathname.startsWith("/family")) || (id === "questions" && pathname.startsWith("/questions")) || (id === "memories" && pathname.startsWith("/memories")) || (id === "writings" && pathname.startsWith("/writings")) || active === id || (id === "story" && active === "timeline") || (id === "gallery" && active === "media") || (id === "memories" && (active === "letters" || active === "contribute"));
 
   return (
     <>
