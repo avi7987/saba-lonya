@@ -169,7 +169,13 @@ export async function POST(req: Request) {
   const people = await resolvePeople(form.getAll("people"), form.getAll("newPeople"), author);
 
   // shared memories appear on the site straight away; only the owner can remove them
-  const saved = await store.create({ type, author, relation, title, body, people: people.length ? people : undefined, lang: detectLang(`${title ?? ""} ${body}`) }, files, "approved");
+  // pages arranged by hand keep their order; otherwise the site works it out once they are read
+  const arranged = form.get("arranged") === "1" && files.length > 1;
+  const saved = await store.create(
+    { type, author, relation, title, body, people: people.length ? people : undefined, lang: detectLang(`${title ?? ""} ${body}`), pageOrder: arranged ? { by: "user" } : undefined },
+    files,
+    "approved"
+  );
   if (files.length) await afterStore();
   // estimate dates for undated photos (and check "dated" scans) after answering the visitor
   // (and notice pages of writing among the pictures, whatever kind of memory was chosen)

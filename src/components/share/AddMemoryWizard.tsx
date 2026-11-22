@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, ArrowRight, Camera, ChefHat, FileAudio, FileVideo, Images, Lightbulb, Mail, MessageCircleHeart, Mic, PenLine, Square, Upload, Video, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, ChevronLeft, ChevronRight, ChefHat, FileAudio, FileVideo, Images, Lightbulb, Mail, MessageCircleHeart, Mic, PenLine, Square, Upload, Video, X } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import { ACCEPT, LIMITS, PICK_MB, SEND_MB, kindOf } from "@/lib/limits";
 import { ease } from "@/lib/motion";
@@ -187,6 +187,18 @@ export default function AddMemoryWizard() {
   const [type, setType] = useState<MType | null>(null);
   const [values, setValues] = useState({ name: "", relation: "", title: "", memory: "" });
   const [files, setFiles] = useState<Picked[]>([]);
+  // the order was arranged by hand (pages of a letter): the site keeps it and does not sort them itself
+  const [arranged, setArranged] = useState(false);
+  const move = (i: number, by: -1 | 1) => {
+    setArranged(true);
+    setFiles((all) => {
+      const j = i + by;
+      if (j < 0 || j >= all.length) return all;
+      const next = [...all];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
+  };
   const [when, setWhen] = useState<When>({ mode: "unknown", date: "", year: "" });
   const [tagged, setTagged] = useState<string[]>([]);
   const [newNames, setNewNames] = useState<string[]>([]);
@@ -389,6 +401,7 @@ export default function AddMemoryWizard() {
       if (f.prep?.sound) fd.append(`sound-${i}`, f.prep.sound, "sound.wav");
     });
     fd.set("filesMeta", JSON.stringify(sendable.map((f) => ({ date: f.prep?.date, nameDate: f.prep?.nameDate, width: f.prep?.width, height: f.prep?.height, sha: f.prep?.sha, phash: f.prep?.phash }))));
+    if (arranged) fd.set("arranged", "1");
     fd.set("when", JSON.stringify({ mode: when.mode, date: when.date, year: Number(when.year) || undefined, decade: when.decade }));
 
     // a plain request, so the upload can show how far along it is
@@ -527,10 +540,24 @@ export default function AddMemoryWizard() {
                   {f.dup === "local" ? s.dupLocal : f.dup.match === "exact" ? (f.dup.status === "pending" ? s.dupPending : s.dupExact) : s.dupSimilar}
                 </span>
               )}
-              {f.kind !== "audio" && !blocked(f) && (
+              {f.kind !== "audio" && !blocked(f) && !(isText(type) && files.length > 1) && (
                 <span className="absolute inset-x-1 bottom-1 truncate rounded bg-white/90 px-1.5 py-0.5 text-center text-[0.7rem] text-charcoal">
                   {f.shrinking !== undefined ? s.shrinking(Math.round(f.shrinking * 100)) : f.preparing ? "…" : (f.prep?.date ?? f.prep?.nameDate) ? `${formatDate({ source: "exif", date: (f.prep?.date ?? f.prep?.nameDate)! }, lang)} · ${s.fromFile}` : s.noDate}
                 </span>
+              )}
+              {files.length > 1 && (
+                // pages of a letter in their order: a number, and arrows along the bottom to move one earlier or later
+                <>
+                  <span className="absolute start-1 top-1 flex h-7 min-w-7 items-center justify-center rounded-full bg-burgundy px-1.5 text-[0.78rem] text-white shadow">{i + 1}</span>
+                  <span className={cn("absolute inset-x-1 flex justify-between", f.kind !== "audio" && !blocked(f) && !isText(type) ? "bottom-8" : "bottom-1")}>
+                    <button type="button" disabled={i === 0} onClick={() => move(i, -1)} aria-label={`${s.moveEarlier}: ${f.file.name}`} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-charcoal shadow disabled:invisible">
+                      <ChevronRight className="h-5 w-5 ltr:rotate-180" aria-hidden />
+                    </button>
+                    <button type="button" disabled={i === files.length - 1} onClick={() => move(i, 1)} aria-label={`${s.moveLater}: ${f.file.name}`} className="flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-charcoal shadow disabled:invisible">
+                      <ChevronLeft className="h-5 w-5 ltr:rotate-180" aria-hidden />
+                    </button>
+                  </span>
+                </>
               )}
               <button
                 type="button"
@@ -544,6 +571,7 @@ export default function AddMemoryWizard() {
           ))}
         </ul>
       )}
+      {files.length > 1 && isText(type) && <p className="text-[0.85rem] text-ink-soft">{s.orderHint}</p>}
       {files.some((f) => f.dup && f.dup !== "local" && f.dup.match === "similar") && <p className="text-[0.85rem] text-[#7a5212]">{s.dupSimilarHint}</p>}
     </div>
   );

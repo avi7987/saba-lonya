@@ -46,7 +46,7 @@ async function reading(id: string) {
     if (a) about = JSON.parse(a.text) as About;
   } catch {}
 
-  return { pages, facts: found, about, waiting };
+  return { pages, facts: found, about, order: pages.length > 1 ? m.pageOrder : undefined, waiting };
 }
 
 const reply = (r: Awaited<ReturnType<typeof reading>>) => (r ? NextResponse.json(r, { headers: { "Cache-Control": "no-cache" } }) : NextResponse.json({ error: "not found" }, { status: 404 }));

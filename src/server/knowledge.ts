@@ -22,9 +22,14 @@ const PAGE_TYPES = new Set(["letter", "recipe"]);
 /** does this memory have pages of writing to read? */
 export const readsPages = (m: Pick<StoredMemory, "type" | "files">) => m.files.some((f) => f.kind === "image" && !f.deleteRequest && (f.page || PAGE_TYPES.has(m.type ?? "")));
 
+/** the pictures of a memory that are (or may be) pages of writing, in their order */
+const pageFiles = (m: StoredMemory) => m.files.filter((f) => f.kind === "image" && !f.deleteRequest && (f.page || TYPES_TO_READ.has(m.type ?? "")));
+
 /** a picture turned out to be a page of writing: read it, then look at the memory again */
 export async function enqueuePage(memoryId: string, file: string) {
   await enqueue("ocr", memoryId, file);
+  // with more than one page, they are put in order once read (a single page is left as it is)
+  await enqueue("order", memoryId);
   await enqueue("facts", memoryId);
   await enqueue("index", memoryId);
 }
@@ -57,6 +62,7 @@ export async function enqueueMemory(m: StoredMemory) {
     if (f.kind === "audio" || (f.kind === "video" && f.sound)) await enqueue("transcribe", m.id, f.name);
     if (f.kind === "image" && (f.page || TYPES_TO_READ.has(m.type ?? ""))) await enqueue("ocr", m.id, f.name);
   }
+  if (pageFiles(m).length > 1) await enqueue("order", m.id);
   await enqueue("facts", m.id);
   await enqueue("index", m.id);
 }
@@ -72,7 +78,7 @@ export async function enqueueFacts(memoryId: string) {
   await enqueue("index", memoryId);
 }
 
-const ORDER: Record<StoredJob["type"], number> = { ocr: 0, transcribe: 0, translate: 1, facts: 1, index: 2 };
+const ORDER: Record<StoredJob["type"], number> = { ocr: 0, transcribe: 0, order: 0.5, translate: 1, facts: 1, index: 2 };
 
 /**
  * Do some of the waiting work. Stops when the day's share of the AI allowance is used; what is
@@ -148,7 +154,7 @@ export async function runJobs(opts: { memoryId?: string; limit?: number; until?:
     let error: string | undefined;
     try {
       ok =
-        j.type === "ocr" ? await readImage(j) : j.type === "transcribe" ? await transcribe(j) : j.type === "translate" ? await translate(j) : j.type === "index" ? await indexMemory(j.memoryId) : await findFacts(j.memoryId);
+        j.type === "ocr" ? await readImage(j) : j.type === "transcribe" ? await transcribe(j) : j.type === "order" ? await orderPages(j) : j.type === "translate" ? await translate(j) : j.type === "index" ? await indexMemory(j.memoryId) : await findFacts(j.memoryId);
     } catch (e) {
       error = String((e as Error)?.message ?? e).slice(0, 200);
     }
@@ -227,14 +233,91 @@ async function readImage(j: StoredJob): Promise<boolean | "skip"> {
 }
 
 /**
+ * A letter of several pages, read: put its pages in their order, from what they say (page numbers,
+ * a heading on the first, a sentence that goes on from one page to the next, a signature and date
+ * on the last). Pages arranged by hand are left as they were.
+ */
+async function orderPages(j: StoredJob): Promise<boolean | "skip"> {
+  const m = await store.get(j.memoryId);
+  if (!m) return "skip";
+  if (m.pageOrder && m.pageOrder.by !== "ai") return "skip";
+  const texts = (await textStore.list("approved")).filter((t) => t.memoryId === m.id && t.source === "ocr");
+  const pages = pageFiles(m).filter((f) => texts.some((t) => t.file === f.name));
+  if (pages.length < 2) return true;
+  const label = (i: number) => String.fromCharCode(65 + i);
+  const listed = pages
+    .map((f, i) => {
+      const t = texts.find((x) => x.file === f.name)!.text;
+      return `=== PAGE ${label(i)} ===\n${t.length > 2400 ? `${t.slice(0, 1200)}\n[…]\n${t.slice(-1200)}` : t}`;
+    })
+    .join("\n\n");
+  const answer = await chat(
+    "background",
+    [
+      {
+        role: "system",
+        content: `These are the pages of ONE letter, poem or greeting by grandfather Lonya, photographed in an unknown order and read by a computer (reading mistakes are possible). Work out their right order from: page numbers written on them (also Roman numerals, or numbers at the top), a title or opening on the first page, a sentence or stanza that continues from the end of one page to the start of another, and a signature, date or place at the end of the last page.
+Reply with ONLY a JSON object: {"order": ["the page letters, first to last"], "sure": true or false, "reason_he": "one short Hebrew sentence: how you could tell"}`,
+      },
+      { role: "user", content: listed },
+    ],
+    { maxTokens: 6000, temperature: 0, model: MODELS.pages }
+  );
+  if (answer === null) return false;
+  const r = parseJson<{ order?: unknown; sure?: unknown; reason_he?: unknown }>(answer);
+  const order = Array.isArray(r?.order) ? r.order.map((x) => String(x).trim().toUpperCase().replace(/[^A-Z]/g, "")) : [];
+  const idx = order.map((x) => x.charCodeAt(0) - 65);
+  // a full, clean arrangement only; otherwise the pages stay as they were shared
+  if (idx.length !== pages.length || new Set(idx).size !== idx.length || idx.some((n) => !(n >= 0 && n < pages.length)) || r?.sure === false) return true;
+  const sorted = idx.map((n) => pages[n].name);
+  const reason = typeof r?.reason_he === "string" ? r.reason_he.trim().slice(0, 200) : undefined;
+  await store.update(m.id, (cur) => {
+    // the pages take the places pages had, in their new order; other files stay where they were
+    const queue = [...sorted];
+    const files = cur.files.map((f) => (queue.length && sorted.includes(f.name) ? cur.files.find((x) => x.name === queue.shift())! : f));
+    return { ...cur, files, pageOrder: { by: "ai", reason } };
+  });
+  return true;
+}
+
+/** the owner puts the pages of a letter in order: kept as they set it, and translated again with the right pages beside each */
+export async function setPageOrder(memoryId: string, names: string[]) {
+  const m = await store.get(memoryId);
+  if (!m) return false;
+  const pages = pageFiles(m).map((f) => f.name);
+  if (names.length !== pages.length || !pages.every((n) => names.includes(n))) return false;
+  await store.update(memoryId, (cur) => {
+    const queue = [...names];
+    const files = cur.files.map((f) => (queue.length && names.includes(f.name) ? cur.files.find((x) => x.name === queue.shift())! : f));
+    return { ...cur, files, pageOrder: { by: "owner" } };
+  });
+  const texts = await textStore.list("approved");
+  for (const n of names) if (!texts.some((t) => t.memoryId === memoryId && t.file === n && t.source === "translation" && t.by === "owner") && texts.some((t) => t.memoryId === memoryId && t.file === n && t.source === "ocr")) await enqueue("translate", memoryId, n);
+  await enqueue("facts", memoryId);
+  return true;
+}
+
+/**
  * A page's words in Hebrew, by the larger model (better Hebrew). Kept line by line, so a poem
  * stays a poem; what could not be read stays [?]. Shown as a computer's translation.
  */
 async function translate(j: StoredJob): Promise<boolean | "skip"> {
   if (await ownerText(j.memoryId, j.file, "translation")) return "skip";
-  const texts = (await textStore.list("approved")).filter((t) => t.memoryId === j.memoryId && t.file === j.file);
-  const original = texts.find((t) => t.source === "ocr")?.text;
+  const all = (await textStore.list("approved")).filter((t) => t.memoryId === j.memoryId && t.source === "ocr");
+  const original = all.find((t) => t.file === j.file)?.text;
   if (!original || isHebrew(original)) return "skip";
+  // a letter of several pages: the end of the page before and the start of the page after, so a
+  // sentence that runs over the page is translated as one
+  const m = await store.get(j.memoryId);
+  const order = m ? pageFiles(m).map((f) => f.name) : [];
+  const at = order.indexOf(j.file ?? "");
+  const textOf = (k: number) => (k >= 0 && k < order.length ? all.find((t) => t.file === order[k])?.text : undefined);
+  const before = textOf(at - 1)?.split("\n").slice(-8).join("\n");
+  const after = textOf(at + 1)?.split("\n").slice(0, 8).join("\n");
+  const context = [
+    before && `END OF THE PAGE BEFORE (context only, do not translate it):\n${before}`,
+    after && `START OF THE PAGE AFTER (context only, do not translate it):\n${after}`,
+  ].filter(Boolean);
   const answer = await chat(
     "background",
     [
@@ -249,7 +332,7 @@ Rules:
 - Where the text has [?], keep [?]. Do not guess missing words, do not explain, summarise or add anything.
 - Reply with the Hebrew translation only.`,
       },
-      { role: "user", content: original },
+      { role: "user", content: context.length ? `${context.join("\n\n")}\n\nTHE PAGE TO TRANSLATE (page ${at + 1} of ${order.length}):\n${original}` : original },
     ],
     // it thinks the poem through first (most of the time goes there), then translates faithfully
     { maxTokens: 9000, temperature: 0.2, model: MODELS.pages }
@@ -293,7 +376,9 @@ async function corpus(m: StoredMemory) {
       const t = [n.what, n.place && `מקום: ${n.place}`, n.when && `מתי: ${n.when}`, n.who && `מי: ${n.who}`].filter(Boolean).join(". ");
       if (t) parts.push({ kind: "note", file: f.name, text: t });
     }
-  for (const t of await textStore.list("approved")) if (t.memoryId === m.id && t.source !== "translation" && t.source !== "about") parts.push({ kind: t.source, file: t.file, text: t.text });
+  const at = (file?: string) => m.files.findIndex((f) => f.name === file);
+  const read = (await textStore.list("approved")).filter((t) => t.memoryId === m.id && t.source !== "translation" && t.source !== "about").sort((a, b) => at(a.file) - at(b.file));
+  for (const t of read) parts.push({ kind: t.source as "ocr" | "transcript", file: t.file, text: t.text });
   return parts;
 }
 

@@ -14,7 +14,7 @@ import { cn } from "../ui";
 type Page = { file: string; src: string; original?: string; originalChecked: boolean; he?: string; heChecked: boolean };
 type Fact = { id: string; he: string; ru?: string; year?: number; place?: string; verified: boolean };
 type About = { kind?: string; to?: string; date?: string; place?: string; summary_he?: string; summary_ru?: string; people?: string[]; places?: string[]; notes_he?: string[]; notes_ru?: string[] };
-type Reading = { pages: Page[]; facts: Fact[]; about?: About; waiting: boolean };
+type Reading = { pages: Page[]; facts: Fact[]; about?: About; order?: { by: "user" | "owner" | "ai"; reason?: string }; waiting: boolean };
 
 export default function PageReading({ memoryId, className }: { memoryId: string; className?: string }) {
   const { t, lang } = useLang();
@@ -94,6 +94,7 @@ export default function PageReading({ memoryId, className }: { memoryId: string;
                   </span>
                 )}
               </div>
+              {data!.order?.by === "ai" && <p className="text-[0.78rem] text-ink-soft">{t.memories.orderByAi}{data!.order.reason ? `: ${data!.order.reason}` : ""}</p>}
               {shown ? (
                 <p dir="auto" lang={view === "he" ? "he" : undefined} className="whitespace-pre-line rounded-[10px] bg-white/75 p-4 text-[1rem] leading-[1.9] text-charcoal/90 ring-1 ring-charcoal/5">
                   {shown}

@@ -65,6 +65,11 @@ export type StoredMemory = Base & {
   people?: string[];
   /** someone asked the owner to remove this whole memory */
   deleteRequest?: DeleteRequest;
+  /**
+   * how the pages of a letter came to be in their order: arranged by whoever shared it, by the
+   * owner, or worked out by the computer from what they say (then a word on why)
+   */
+  pageOrder?: { by: "user" | "owner" | "ai"; reason?: string };
 };
 
 /** A family-tree request as submitted (see FamilyRequest in lib/family). */
@@ -233,7 +238,7 @@ export type StoredFact = Base & {
 export type StoredVector = Base & { kind: "memory" | "note" | "ocr" | "transcript" | "translation" | "fact"; memoryId?: string; file?: string; factId?: string; text: string; vec: string };
 
 /** background work waiting to be done. status: pending = to do, approved = done, rejected = gave up */
-export type StoredJob = Base & { type: "ocr" | "transcribe" | "translate" | "facts" | "index"; memoryId: string; file?: string; attempts: number; error?: string };
+export type StoredJob = Base & { type: "ocr" | "transcribe" | "order" | "translate" | "facts" | "index"; memoryId: string; file?: string; attempts: number; error?: string };
 
 /** People named in photos and memories who are not (yet) in the family tree: one shared list. */
 export type StoredName = Base & { name: string; addedBy?: string };

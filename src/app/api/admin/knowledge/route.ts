@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/server/auth";
 import { aiAvailable } from "@/server/ai";
-import { enqueueMemory, queueState, readsPages, runJobs, saveOwnerText } from "@/server/knowledge";
+import { enqueueMemory, queueState, readsPages, runJobs, saveOwnerText, setPageOrder } from "@/server/knowledge";
 import { indexFact, indexState } from "@/server/semantic";
 import { factStore, jobStore, store, textStore, type StoredFact } from "@/server/store";
 
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
             const t = texts.find((x) => x.memoryId === m.id && x.file === f.name && x.source === source);
             return t ? { text: t.text, by: t.by } : undefined;
           };
-          return { memoryId: m.id, file: f.name, src: `/api/files/memories/${m.id}/${f.thumb ?? f.name}`, full: `/api/files/memories/${m.id}/${f.name}`, ocr: of("ocr"), translation: of("translation"), createdAt: m.createdAt };
+          return { order: m.pageOrder, memoryId: m.id, file: f.name, src: `/api/files/memories/${m.id}/${f.thumb ?? f.name}`, full: `/api/files/memories/${m.id}/${f.name}`, ocr: of("ocr"), translation: of("translation"), createdAt: m.createdAt };
         })
     )
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -87,6 +87,14 @@ export async function POST(req: Request) {
       await saveOwnerText(memoryId, file, source, words);
       // done now, while the owner waits: work after the reply is cut short on the free plan
       await runJobs({ memoryId, limit: 4, until: Date.now() + 110 * 1000 });
+      return json({ ok: true });
+    }
+    case "order": {
+      // the owner puts a letter's pages in order
+      const memoryId = text(b.memoryId, 80) ?? "";
+      const names = Array.isArray(b.files) ? b.files.filter((x): x is string => typeof x === "string").slice(0, 50) : [];
+      if (!(await setPageOrder(memoryId, names))) return json({ error: "order" }, 422);
+      await runJobs({ memoryId, limit: 20, until: Date.now() + 110 * 1000 });
       return json({ ok: true });
     }
     case "process": {

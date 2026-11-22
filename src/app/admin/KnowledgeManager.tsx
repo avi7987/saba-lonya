@@ -14,14 +14,14 @@ type Data = {
   pages: PageText[];
 };
 
-type PageText = { memoryId: string; file: string; src: string; full: string; ocr?: { text: string; by?: "owner" }; translation?: { text: string; by?: "owner" } };
+type PageText = { order?: { by: "user" | "owner" | "ai"; reason?: string }; memoryId: string; file: string; src: string; full: string; ocr?: { text: string; by?: "owner" }; translation?: { text: string; by?: "owner" } };
 
 /**
  * One photographed page: what the computer read and its Hebrew, side by side, each one editable.
  * The computer reads cursive handwriting poorly, so the owner (or someone who reads Russian) can
  * correct the words; a corrected original is translated again by itself.
  */
-function PageEditor({ page, title, busy, onSave }: { page: PageText; title: string; busy: boolean; onSave: (source: "ocr" | "translation", text: string) => void }) {
+function PageEditor({ page, title, busy, onSave, pos, count, onMove }: { page: PageText; title: string; busy: boolean; onSave: (source: "ocr" | "translation", text: string) => void; pos: number; count: number; onMove: (by: -1 | 1) => void }) {
   const [ocr, setOcr] = useState(page.ocr?.text ?? "");
   const [he, setHe] = useState(page.translation?.text ?? "");
   const field = "min-h-56 w-full rounded-md border border-charcoal/20 bg-white px-3 py-2 text-[0.95rem] leading-relaxed";
@@ -40,6 +40,24 @@ function PageEditor({ page, title, busy, onSave }: { page: PageText; title: stri
             {title || "זיכרון"}
           </a>
           <span className="text-[0.82rem] text-ink-soft">לחיצה על התמונה פותחת את הדף בגודל מלא</span>
+          {count > 1 && (
+            <span className="mt-1 flex flex-wrap items-center gap-2 text-[0.88rem]">
+              <b className="text-burgundy">
+                דף {pos + 1} מתוך {count}
+              </b>
+              <button type="button" disabled={busy || pos === 0} onClick={() => onMove(-1)} className="rounded-full border border-charcoal/15 px-3 py-1 disabled:opacity-30">
+                להקדים
+              </button>
+              <button type="button" disabled={busy || pos === count - 1} onClick={() => onMove(1)} className="rounded-full border border-charcoal/15 px-3 py-1 disabled:opacity-30">
+                לאחר
+              </button>
+              {pos === 0 && (
+                <span className="text-[0.8rem] text-ink-soft">
+                  {page.order?.by === "ai" ? `הסדר נקבע במחשב${page.order.reason ? `: ${page.order.reason}` : ""}` : page.order?.by === "owner" ? "הסדר נקבע בידיכם" : page.order?.by === "user" ? "הסדר נקבע בידי מי ששיתף" : "הסדר עוד לא נבדק"}
+                </span>
+              )}
+            </span>
+          )}
         </span>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
@@ -413,15 +431,26 @@ export default function KnowledgeManager({ token, onDone }: { token: string; onD
             מה שהמחשב קרא מכל דף, והתרגום לעברית. בכתב יד הוא טועה לא מעט, אז כדאי לבדוק ולתקן. מה שתתקנו מוצג באתר כ&quot;נבדק בידי המשפחה&quot;, והמחשב לא יכתוב עליו שוב. בדף שעוד לא נקרא אפשר גם להקליד את הטקסט בעצמכם.
           </p>
           <ul className="flex flex-col gap-3">
-            {data.pages.map((p) => (
+            {data.pages.map((p) => {
+              const same = data.pages.filter((x) => x.memoryId === p.memoryId);
+              const pos = same.findIndex((x) => x.file === p.file);
+              return (
               <PageEditor
+                pos={pos}
+                count={same.length}
+                onMove={(by) => {
+                  const names = same.map((x) => x.file);
+                  [names[pos], names[pos + by]] = [names[pos + by], names[pos]];
+                  call({ action: "order", memoryId: p.memoryId, files: names }, "הסדר נשמר, והתרגום עודכן לפי הסדר החדש.");
+                }}
                 key={`${p.memoryId}/${p.file}/${p.ocr?.text.length ?? 0}/${p.translation?.text.length ?? 0}`}
                 page={p}
                 title={data.titles[p.memoryId]?.title ?? ""}
                 busy={busy}
                 onSave={(source, text) => call({ action: "page", memoryId: p.memoryId, file: p.file, source, text }, source === "ocr" ? "המקור נשמר, והתרגום עודכן." : "התרגום נשמר.")}
               />
-            ))}
+              );
+            })}
           </ul>
         </section>
       )}
