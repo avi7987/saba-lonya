@@ -202,7 +202,7 @@ export default function BookReader({ entries, start = 0, withCover = false, onCl
         const notes = (lang === "ru" ? a?.notes_ru : a?.notes_he) ?? a?.notes_he;
         return paper(
           side,
-          <div className="flex h-full flex-col gap-4 overflow-auto px-8 py-10 sm:px-12" dir={lang === "ru" ? "ltr" : "rtl"}>
+          <div className="flex h-full flex-col gap-4 overflow-auto px-8 pb-14 pt-10 sm:px-12" dir={lang === "ru" ? "ltr" : "rtl"}>
             {r === undefined ? (
               <p className="text-ink-soft">{b.loading}</p>
             ) : !a ? (
