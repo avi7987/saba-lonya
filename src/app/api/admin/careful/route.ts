@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { isAdmin } from "@/server/auth";
-import { setting } from "@/server/notify";
 import { pendingPages, saveCareful, type CarefulResult } from "@/server/knowledge";
 import { store } from "@/server/store";
+import { carefulKeyOk, carefulReady, fireCareful } from "@/server/careful";
 
 export const runtime = "nodejs";
 
@@ -17,17 +17,11 @@ export const runtime = "nodejs";
 
 const json = (b: unknown, status = 200) => NextResponse.json(b, { status, headers: { "Cache-Control": "no-store" } });
 
-/** the task's own start address and key, set by the owner in Cloudflare (CLAUDE_TASK_URL, CLAUDE_TASK_TOKEN) */
-async function taskTrigger() {
-  const url = (await setting("CLAUDE_TASK_URL"))?.trim();
-  const token = (await setting("CLAUDE_TASK_TOKEN"))?.trim();
-  // only Anthropic's own address for starting a scheduled task: the key is never sent anywhere else
-  const ok = !!url && /^https:\/\/api\.anthropic\.com\/v1\/claude_code\/routines\/trig_[A-Za-z0-9]+\/fire$/.test(url) && !!token;
-  return ok ? { url: url!, token: token! } : undefined;
-}
+/** the owner (admin password) or the task itself (the one-time key it was started with) */
+const allowed = async (req: Request) => (await carefulKeyOk(req)) || (await isAdmin(req));
 
 export async function GET(req: Request) {
-  if (!(await isAdmin(req))) return json({ error: "unauthorized" }, 401);
+  if (!(await allowed(req))) return json({ error: "unauthorized" }, 401);
   const limit = Math.min(Math.max(Number(new URL(req.url).searchParams.get("limit")) || 20, 1), 60);
   const pending = await pendingPages(limit);
   return json({
@@ -35,13 +29,14 @@ export async function GET(req: Request) {
     waiting: pending.reduce((n, m) => n + m.pages.length, 0),
     last: (await store.getMeta("careful-last").catch(() => undefined)) ?? null,
     started: (await store.getMeta("careful-started").catch(() => undefined)) ?? null,
-    button: !!(await taskTrigger()),
+    button: await carefulReady(),
   });
 }
 
 export async function POST(req: Request) {
-  if (!(await isAdmin(req))) return json({ error: "unauthorized" }, 401);
   const b = (await req.json().catch(() => ({}))) as Record<string, unknown>;
+  // the task may only send what it read; starting it is for the owner
+  if (!(b.action === "save" ? await allowed(req) : await isAdmin(req))) return json({ error: "unauthorized" }, 401);
 
   if (b.action === "save") {
     const r = b as unknown as CarefulResult;
@@ -51,22 +46,11 @@ export async function POST(req: Request) {
   }
 
   if (b.action === "run") {
-    const t = await taskTrigger();
-    if (!t) return json({ error: "not set up" }, 409);
-    // one start every two minutes is plenty (the task itself may run up to 30 times an hour)
-    const last = Date.parse((await store.getMeta("careful-started").catch(() => undefined)) ?? "");
-    if (Number.isFinite(last) && Date.now() - last < 2 * 60 * 1000) return json({ error: "just started" }, 429);
-    const waiting = (await pendingPages(60)).reduce((n, m) => n + m.pages.length, 0);
-    if (!waiting) return json({ ok: true, waiting: 0 });
-    const r = await fetch(t.url, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${t.token}`, "anthropic-beta": "experimental-cc-routine-2026-04-01", "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
-      body: JSON.stringify({ text: `The site's owner pressed the button: ${waiting} page(s) are waiting.` }),
-    }).catch(() => null);
-    if (!r?.ok) return json({ error: "start failed", status: r?.status ?? 0 }, 502);
-    await store.setMeta("careful-started", new Date().toISOString());
-    const d = (await r.json().catch(() => ({}))) as { claude_code_session_url?: string };
-    return json({ ok: true, waiting, session: d.claude_code_session_url });
+    const r = await fireCareful("The site's owner pressed the button.");
+    if (r.error === "not set up") return json(r, 409);
+    if (r.error === "just started") return json(r, 429);
+    if (r.error) return json(r, 502);
+    return json(r);
   }
 
   return json({ error: "action" }, 400);

@@ -311,7 +311,7 @@ function CarefulPanel({ token, onDone }: { token: string; onDone: (msg: string) 
           {busy ? "מפעילים…" : "קריאה ותרגום מדויקים עכשיו"}
         </button>
       ) : (
-        <p className="rounded-md bg-[#f6ead2] p-3 text-[0.92rem] text-[#6b4a12]">הכפתור עוד לא מחובר: צריך להגדיר ב-Cloudflare את CLAUDE_TASK_URL ואת CLAUDE_TASK_TOKEN. הקריאה הלילית עובדת גם בלי זה.</p>
+        <p className="rounded-md bg-[#f6ead2] p-3 text-[0.92rem] text-[#6b4a12]">עוד לא מחובר: צריך להגדיר ב-Cloudflare את CLAUDE_TASK_URL ואת CLAUDE_TASK_TOKEN. עד אז אין קריאה מדויקת (לא בלילה ולא בכפתור).</p>
       )}
     </section>
   );
