@@ -118,6 +118,14 @@ async function translateOnce() {
   }
 }
 
+/** letters of several pages that were left in the order they were picked get another try, once */
+const ORDER_VERSION = "1";
+async function orderOnce() {
+  if ((await store.getMeta("order-version").catch(() => undefined)) === ORDER_VERSION) return;
+  await store.setMeta("order-version", ORDER_VERSION);
+  for (const m of await store.list()) if (m.status !== "rejected" && !m.pageOrder && pageFiles(m).length > 1) await enqueue("order", m.id);
+}
+
 /** pages translated before the translation knew famous names and wrote notes: translated and looked at again, once */
 const NOTES_VERSION = "1";
 async function notesOnce() {
@@ -139,6 +147,7 @@ export async function runJobs(opts: { memoryId?: string; limit?: number; until?:
   await refreshIndexOnce().catch(() => {});
   await translateOnce().catch(() => {});
   await notesOnce().catch(() => {});
+  await orderOnce().catch(() => {});
   const jobs = (await jobStore.list("pending"))
     .filter((j) => !opts.memoryId || j.memoryId === opts.memoryId)
     .sort((a, b) => ORDER[a.type] - ORDER[b.type] || a.createdAt.localeCompare(b.createdAt));
@@ -216,7 +225,7 @@ async function readImage(j: StoredJob): Promise<boolean | "skip"> {
       content: [
         {
           type: "text",
-          text: `Copy out all the text in this image exactly as written (handwritten or printed), in its original language (often Hebrew or Russian), keeping line breaks. Do not translate, summarise or add anything. Where a word cannot be read, write [?]. If there is no text, or the picture is a photograph of people, places or things rather than a page of writing (even if a few words, like a sign or a label, can be seen), answer exactly: NO_TEXT`,
+          text: `Copy out all the text in this image exactly as written (handwritten or printed), in its original language (often Hebrew or Russian), keeping line breaks. Include EVERYTHING on the page: page numbers (also Roman numerals like I, II, III, and numbers in a corner or at the top), headings, notes in the margins, dates and signatures. Do not translate, summarise or add anything. Where a word cannot be read, write [?]. If there is no text, or the picture is a photograph of people, places or things rather than a page of writing (even if a few words, like a sign or a label, can be seen), answer exactly: NO_TEXT`,
         },
         { type: "image_url", image_url: { url: `data:${mime};base64,${base64(bytes)}` } },
       ],
@@ -248,7 +257,8 @@ async function orderPages(j: StoredJob): Promise<boolean | "skip"> {
   const listed = pages
     .map((f, i) => {
       const t = texts.find((x) => x.file === f.name)!.text;
-      return `=== PAGE ${label(i)} ===\n${t.length > 2400 ? `${t.slice(0, 1200)}\n[…]\n${t.slice(-1200)}` : t}`;
+      const lines = t.split("\n").filter((x) => x.trim());
+      return `=== PAGE ${label(i)} ===\nFIRST LINE: ${lines[0] ?? ""}\nLAST LINE: ${lines[lines.length - 1] ?? ""}\nFULL TEXT:\n${t.length > 2400 ? `${t.slice(0, 1200)}\n[…]\n${t.slice(-1200)}` : t}`;
     })
     .join("\n\n");
   const answer = await chat(
@@ -257,26 +267,36 @@ async function orderPages(j: StoredJob): Promise<boolean | "skip"> {
       {
         role: "system",
         content: `These are the pages of ONE letter, poem or greeting by grandfather Lonya, photographed in an unknown order and read by a computer (reading mistakes are possible). Work out their right order from: page numbers written on them (also Roman numerals, or numbers at the top), a title or opening on the first page, a sentence or stanza that continues from the end of one page to the start of another, and a signature, date or place at the end of the last page.
+Strong signs: a title or a dedication ("Моей ... !") opens the first page; a date and place ("август 1996 — Карловы Вары") close the last page; a numbered page goes before a higher number. A page that starts in the middle of a sentence or with a small letter is not the first. Give your best order even if you are not completely sure.
 Reply with ONLY a JSON object: {"order": ["the page letters, first to last"], "sure": true or false, "reason_he": "one short Hebrew sentence: how you could tell"}`,
       },
       { role: "user", content: listed },
     ],
-    { maxTokens: 6000, temperature: 0, model: MODELS.pages }
+    { maxTokens: 12000, temperature: 0, model: MODELS.pages }
   );
   if (answer === null) return false;
   const r = parseJson<{ order?: unknown; sure?: unknown; reason_he?: unknown }>(answer);
   const order = Array.isArray(r?.order) ? r.order.map((x) => String(x).trim().toUpperCase().replace(/[^A-Z]/g, "")) : [];
   const idx = order.map((x) => x.charCodeAt(0) - 65);
   // a full, clean arrangement only; otherwise the pages stay as they were shared
-  if (idx.length !== pages.length || new Set(idx).size !== idx.length || idx.some((n) => !(n >= 0 && n < pages.length)) || r?.sure === false) return true;
+  if (idx.length !== pages.length || new Set(idx).size !== idx.length || idx.some((n) => !(n >= 0 && n < pages.length))) return true;
   const sorted = idx.map((n) => pages[n].name);
-  const reason = typeof r?.reason_he === "string" ? r.reason_he.trim().slice(0, 200) : undefined;
+  const said = typeof r?.reason_he === "string" ? r.reason_he.trim().slice(0, 200) : "";
+  // a guess it was not sure of is still used (better than the order they happened to be picked in), and said so
+  const reason = r?.sure === false ? `${said}${said ? " " : ""}(לא בטוח: כדאי לבדוק)` : said || undefined;
+  const moved = sorted.some((n, i) => n !== pages[i].name);
   await store.update(m.id, (cur) => {
     // the pages take the places pages had, in their new order; other files stay where they were
     const queue = [...sorted];
     const files = cur.files.map((f) => (queue.length && sorted.includes(f.name) ? cur.files.find((x) => x.name === queue.shift())! : f));
     return { ...cur, files, pageOrder: { by: "ai", reason } };
   });
+  // pages translated while still out of order are translated again, each with its real neighbours
+  if (moved) {
+    const done = await textStore.list("approved");
+    for (const f of pages) if (done.some((t) => t.memoryId === m.id && t.file === f.name && t.source === "translation" && t.by !== "owner")) await enqueue("translate", m.id, f.name);
+    await enqueue("facts", m.id);
+  }
   return true;
 }
 
