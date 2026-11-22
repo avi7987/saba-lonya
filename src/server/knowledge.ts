@@ -118,6 +118,34 @@ async function translateOnce() {
   }
 }
 
+/**
+ * Puts back pages that dropped out of a memory's list of files (an earlier reordering lost them):
+ * the pages' words were read and kept, and the files themselves are still in storage, so each
+ * one comes back as a page, and the letter is put in order and translated again.
+ */
+async function repairPages() {
+  const texts = (await textStore.list("approved")).filter((t) => t.source === "ocr" && t.file);
+  const byMemory = new Map<string, Set<string>>();
+  for (const t of texts) byMemory.set(t.memoryId, (byMemory.get(t.memoryId) ?? new Set()).add(t.file!));
+  for (const [id, names] of byMemory) {
+    const m = await store.get(id);
+    if (!m || m.status === "rejected") continue;
+    const missing = [...names].filter((n) => !m.files.some((f) => f.name === n));
+    if (!missing.length) continue;
+    const stored = await store.storedFiles?.(id);
+    const back = missing.flatMap((n) => {
+      const s = stored?.find((x) => x.name === n);
+      return s ? [{ name: n, kind: "image" as const, size: s.size, page: true }] : [];
+    });
+    if (!back.length) continue;
+    await store.update(id, (cur) => ({ ...cur, files: [...cur.files.filter((f) => !back.some((b) => b.name === f.name)), ...back], pageOrder: undefined }));
+    console.warn("[repair] pages put back", id, back.length);
+    await enqueue("order", id);
+    for (const n of names) await enqueue("translate", id, n);
+    await enqueue("facts", id);
+  }
+}
+
 /** letters of several pages that were left in the order they were picked get another try, once */
 const ORDER_VERSION = "1";
 async function orderOnce() {
@@ -148,6 +176,7 @@ export async function runJobs(opts: { memoryId?: string; limit?: number; until?:
   await translateOnce().catch(() => {});
   await notesOnce().catch(() => {});
   await orderOnce().catch(() => {});
+  await repairPages().catch((e) => console.warn("[repair]", e));
   const jobs = (await jobStore.list("pending"))
     .filter((j) => !opts.memoryId || j.memoryId === opts.memoryId)
     .sort((a, b) => ORDER[a.type] - ORDER[b.type] || a.createdAt.localeCompare(b.createdAt));
@@ -288,7 +317,11 @@ Reply with ONLY a JSON object: {"order": ["the page letters, first to last"], "s
   await store.update(m.id, (cur) => {
     // the pages take the places pages had, in their new order; other files stay where they were
     const queue = [...sorted];
-    const files = cur.files.map((f) => (queue.length && sorted.includes(f.name) ? cur.files.find((x) => x.name === queue.shift())! : f));
+    const files = cur.files.map((f) => {
+      if (!sorted.includes(f.name)) return f;
+      const next = queue.shift();
+      return cur.files.find((x) => x.name === next) ?? f;
+    });
     return { ...cur, files, pageOrder: { by: "ai", reason } };
   });
   // pages translated while still out of order are translated again, each with its real neighbours
@@ -308,7 +341,11 @@ export async function setPageOrder(memoryId: string, names: string[]) {
   if (names.length !== pages.length || !pages.every((n) => names.includes(n))) return false;
   await store.update(memoryId, (cur) => {
     const queue = [...names];
-    const files = cur.files.map((f) => (queue.length && names.includes(f.name) ? cur.files.find((x) => x.name === queue.shift())! : f));
+    const files = cur.files.map((f) => {
+      if (!names.includes(f.name)) return f;
+      const next = queue.shift();
+      return cur.files.find((x) => x.name === next) ?? f;
+    });
     return { ...cur, files, pageOrder: { by: "owner" } };
   });
   const texts = await textStore.list("approved");

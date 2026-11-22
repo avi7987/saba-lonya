@@ -11,7 +11,9 @@ type Row = { data: string };
  */
 export function cloudStore<T extends Base>(collection: string, db: D1Like, files: R2Like): Store<T> {
   const key = (id: string, name: string) => `${collection}/${id}/${name}`;
-  const parse = (r: Row | null) => (r ? (JSON.parse(r.data) as T) : undefined);
+  // a record whose list of files was damaged must never break a whole page: empty places are dropped
+  const clean = (rec: T) => ({ ...rec, files: (Array.isArray(rec.files) ? rec.files : []).filter((f) => f && typeof f === "object" && typeof f.name === "string") }) as T;
+  const parse = (r: Row | null) => (r ? clean(JSON.parse(r.data) as T) : undefined);
 
   return {
     async create(fields, uploads: NewFile[], status = "pending") {
@@ -45,7 +47,7 @@ export function cloudStore<T extends Base>(collection: string, db: D1Like, files
         ? db.prepare("SELECT data FROM records WHERE collection = ?1 AND status = ?2 ORDER BY created_at DESC").bind(collection, status)
         : db.prepare("SELECT data FROM records WHERE collection = ?1 ORDER BY created_at DESC").bind(collection);
       const { results } = await q.all<Row>();
-      return results.map((r) => JSON.parse(r.data) as T);
+      return results.map((r) => clean(JSON.parse(r.data) as T));
     },
     async get(id) {
       return parse(await db.prepare("SELECT data FROM records WHERE collection = ?1 AND id = ?2").bind(collection, id).first<Row>());
@@ -100,6 +102,11 @@ export function cloudStore<T extends Base>(collection: string, db: D1Like, files
     },
     async setMeta(k, v) {
       await db.prepare("INSERT INTO meta (key, value) VALUES (?1, ?2) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(k, v).run();
+    },
+    async storedFiles(id) {
+      if (!files.list || !/^[0-9a-f-]{36}$/.test(id)) return [];
+      const { objects } = await files.list({ prefix: `${collection}/${id}/`, limit: 1000 });
+      return objects.map((o) => ({ name: o.key.slice(`${collection}/${id}/`.length), size: o.size }));
     },
     async readFile(id, name) {
       if (!/^[0-9a-f-]{36}$/.test(id) || !SAFE.test(name)) return undefined;

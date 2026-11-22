@@ -122,6 +122,8 @@ export interface Store<T extends Base> {
   /** store one more file for a record (e.g. a preview made later); returns its generated name */
   putFile(id: string, data: Uint8Array, ext: string): Promise<string>;
   readFile(id: string, name: string): Promise<Uint8Array | undefined>;
+  /** the files stored for one record (name and size), to put back a record's lost list of files */
+  storedFiles?(id: string): Promise<{ name: string; size: number }[]>;
   /** delete a record's files (e.g. after it was rejected); returns the bytes freed */
   removeFiles(id: string): Promise<number>;
   /** total bytes of files this collection keeps */
@@ -180,6 +182,7 @@ function lazy<T extends Base>(collection: string): Store<T> {
     update: async (id, c) => (await b()).update(id, c),
     putFile: async (id, d, e) => (await b()).putFile(id, d, e),
     readFile: async (id, name) => (await b()).readFile(id, name),
+    storedFiles: async (id) => (await (await b()).storedFiles?.(id)) ?? [],
     removeFiles: async (id) => (await b()).removeFiles(id),
     usedBytes: async () => (await b()).usedBytes(),
     getMeta: async (k) => (await b()).getMeta(k),
@@ -195,6 +198,7 @@ export type R2Like = {
   put(key: string, value: Uint8Array, opts?: { httpMetadata?: { contentType?: string } }): Promise<unknown>;
   get(key: string): Promise<{ arrayBuffer(): Promise<ArrayBuffer> } | null>;
   delete(keys: string | string[]): Promise<void>;
+  list?(opts: { prefix: string; limit?: number }): Promise<{ objects: { key: string; size: number }[] }>;
 };
 
 export const store: Store<StoredMemory> = lazy<StoredMemory>("memories");
