@@ -27,10 +27,18 @@ async function trigger() {
 
 export const carefulReady = async () => !!(await trigger());
 
-/** is this request from the task, with the key it was started with? */
+/**
+ * The task's own standing key (only its hash is here; the key itself is in the task's instructions in
+ * the owner's Claude account). It opens nothing but the careful-reading routes: the pages waiting,
+ * and saving what was read.
+ */
+const STANDING = "b8303f0e94d53d0c2414333d9242e50c249b0951e0238dbc58eadc6663337b84";
+
+/** is this request from the task (its standing key, or the one-time key it was started with)? */
 export async function carefulKeyOk(req: Request) {
   const given = req.headers.get("x-careful-key") ?? "";
   if (given.length < 20) return false;
+  if ((await sha(given)) === STANDING) return true;
   try {
     const k = JSON.parse((await store.getMeta(KEY)) ?? "null") as { hash: string; until: number } | null;
     return !!k && Date.now() < k.until && (await sha(given)) === k.hash;
