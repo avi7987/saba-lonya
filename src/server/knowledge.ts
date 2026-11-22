@@ -112,6 +112,16 @@ async function translateOnce() {
   }
 }
 
+/** pages translated before the translation knew famous names and wrote notes: translated and looked at again, once */
+const NOTES_VERSION = "1";
+async function notesOnce() {
+  if ((await store.getMeta("notes-version").catch(() => undefined)) === NOTES_VERSION) return;
+  await store.setMeta("notes-version", NOTES_VERSION);
+  const texts = await textStore.list("approved");
+  for (const t of texts) if (t.source === "translation" && t.by !== "owner" && t.file) await enqueue("translate", t.memoryId, t.file);
+  for (const id of new Set(texts.filter((t) => t.source === "about").map((t) => t.memoryId))) await enqueue("facts", id);
+}
+
 /** mostly Hebrew letters: nothing to translate */
 export function isHebrew(text: string) {
   const he = (text.match(/[\u05d0-\u05ea]/g) ?? []).length;
@@ -122,6 +132,7 @@ export function isHebrew(text: string) {
 export async function runJobs(opts: { memoryId?: string; limit?: number; until?: number } = {}) {
   await refreshIndexOnce().catch(() => {});
   await translateOnce().catch(() => {});
+  await notesOnce().catch(() => {});
   const jobs = (await jobStore.list("pending"))
     .filter((j) => !opts.memoryId || j.memoryId === opts.memoryId)
     .sort((a, b) => ORDER[a.type] - ORDER[b.type] || a.createdAt.localeCompare(b.createdAt));
@@ -232,7 +243,9 @@ async function translate(j: StoredJob): Promise<boolean | "skip"> {
         content: `You translate family papers of grandfather Lonya (letters, poems, greetings, mostly in Russian) into natural, warm modern Hebrew.
 Rules:
 - Translate everything, line by line: keep the same line breaks and stanzas, so a poem stays a poem. Do not try to rhyme; keep the meaning and the feeling.
-- Keep names as names, written in Hebrew letters (Циля → צילה, Динка → דינקה), and keep dates and numbers as they are. "в/ч" is a military unit (יחידה צבאית).
+- Keep family names as names, written in Hebrew letters (Циля → צילה, Динка → דינקה), and keep dates and numbers as they are. "в/ч" is a military unit (יחידה צבאית).
+- Well-known people and places (poets, writers, cities, rivers) take their usual Hebrew spelling, as in a Hebrew encyclopedia (Есенин → יסנין, Маяковский → מאיאקובסקי, Пушкин → פושקין, Днестр → דניסטר).
+- Idioms and set phrases are translated by what they mean in Hebrew, not word for word.
 - Where the text has [?], keep [?]. Do not guess missing words, do not explain, summarise or add anything.
 - Reply with the Hebrew translation only.`,
       },
@@ -294,6 +307,9 @@ export type About = {
   summary_ru?: string;
   people?: string[];
   places?: string[];
+  /** what a Hebrew reader may need explained: famous names, Soviet-era words, lost wordplay */
+  notes_he?: string[];
+  notes_ru?: string[];
 };
 
 /**
@@ -320,6 +336,8 @@ export async function findFacts(memoryId: string): Promise<boolean | "skip"> {
   if (parts.reduce((n, p) => n + p.text.trim().length, 0) < 40) return true;
   const numbered = parts.map((p, i) => `[${i + 1}] (${p.kind})\n${p.text}`).join("\n\n");
   const who = m.author ? `It was shared by ${m.author}${m.relation ? ` (${m.relation})` : ""}.` : "";
+  // what was already found here (and not rejected) is not found again in other words
+  const known = (await factStore.list()).filter((f) => f.status !== "rejected" && f.sources.some((x) => x.memoryId === m.id)).map((f) => f.statement);
   // a photographed letter, poem or greeting is usually Grandpa's own writing
   const page = readsPages(m);
   const answer = await chat(
@@ -345,9 +363,9 @@ Rules:
 - "year": a four-digit year only if the text gives it, else null. "place": a place name if the text gives it, else null.
 - Up to 15 facts.
 Reply with ONLY a JSON object:
-{${page ? `"about": {"kind": "poem|letter|greeting|story|recipe|other", "to": "who it is addressed to, or null", "date": "as written, or null", "place": "as written, or null", "summary_he": "2-3 Hebrew sentences: what this is and what it tells", "summary_ru": "the same in Russian", "people": ["each person named or clearly meant, with the relation to Lonya when the text gives it, in Hebrew"], "places": ["each place, in Hebrew"]}, ` : ""}"facts": [{"statement_he": "...", "statement_ru": "...", "category": "...", "year": null, "place": null, "quote": "..."}]}`,
+{${page ? `"about": {"kind": "poem|letter|greeting|story|recipe|other", "to": "who it is addressed to, or null", "date": "as written, or null", "place": "as written, or null", "summary_he": "2-3 Hebrew sentences: what this is and what it tells", "summary_ru": "the same in Russian", "people": ["each person named or clearly meant, with the relation to Lonya when the text gives it, in Hebrew"], "places": ["each place, in Hebrew"], "notes_he": ["short Hebrew notes that help a Hebrew reader today: who a famous person mentioned is and why Lonya mentions them, what a Soviet-era word or custom means (e.g. \"гражданка\" = civilian life), a wordplay or rhyme lost in translation; only what the text really contains; [] if none"], "notes_ru": ["the same notes in Russian"]}, ` : ""}"facts": [{"statement_he": "...", "statement_ru": "...", "category": "...", "year": null, "place": null, "quote": "..."}]}`,
       },
-      { role: "user", content: `${who}${m.title ? `\nIts title: ${m.title}` : ""}\n\n${numbered}` },
+      { role: "user", content: `${who}${m.title ? `\nIts title: ${m.title}` : ""}${known.length ? `\n\nAlready recorded from this memory (do not list these again, in any wording):\n${known.map((k) => `- ${k}`).join("\n")}` : ""}\n\n${numbered}` },
     ],
     // it reasons over the whole page first; that takes most of the room
     { maxTokens: 12000, temperature: 0.1, model: MODELS.pages }
@@ -359,8 +377,8 @@ Reply with ONLY a JSON object:
   const about = !Array.isArray(parsed) ? parsed.about : undefined;
   if (page && about && typeof about === "object") {
     const str = (v: unknown, n: number) => (typeof v === "string" && v.trim() && v.trim() !== "null" ? v.trim().slice(0, n) : undefined);
-    const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && !!x.trim()).map((x) => x.trim().slice(0, 120)).slice(0, 20) : undefined);
-    const clean: About = { kind: str(about.kind, 20), to: str(about.to, 120), date: str(about.date, 60), place: str(about.place, 120), summary_he: str(about.summary_he, 800), summary_ru: str(about.summary_ru, 800), people: list(about.people), places: list(about.places) };
+    const list = (v: unknown, n = 120) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string" && !!x.trim()).map((x) => x.trim().slice(0, n)).slice(0, 20) : undefined);
+    const clean: About = { kind: str(about.kind, 20), to: str(about.to, 120), date: str(about.date, 60), place: str(about.place, 120), summary_he: str(about.summary_he, 800), summary_ru: str(about.summary_ru, 800), people: list(about.people), places: list(about.places), notes_he: list(about.notes_he, 300), notes_ru: list(about.notes_ru, 300) };
     if (clean.summary_he || clean.summary_ru) await saveText({ memoryId: m.id }, "about", JSON.stringify(clean), MODELS.pages);
   }
 

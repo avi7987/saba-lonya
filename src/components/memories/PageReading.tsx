@@ -13,7 +13,7 @@ import { cn } from "../ui";
 
 type Page = { file: string; src: string; original?: string; originalChecked: boolean; he?: string; heChecked: boolean };
 type Fact = { id: string; he: string; ru?: string; year?: number; place?: string; verified: boolean };
-type About = { kind?: string; to?: string; date?: string; place?: string; summary_he?: string; summary_ru?: string; people?: string[]; places?: string[] };
+type About = { kind?: string; to?: string; date?: string; place?: string; summary_he?: string; summary_ru?: string; people?: string[]; places?: string[]; notes_he?: string[]; notes_ru?: string[] };
 type Reading = { pages: Page[]; facts: Fact[]; about?: About; waiting: boolean };
 
 export default function PageReading({ memoryId, className }: { memoryId: string; className?: string }) {
@@ -131,6 +131,21 @@ export default function PageReading({ memoryId, className }: { memoryId: string;
                             <span dir="auto">{v}</span>
                           </p>
                         ))}
+                      {(() => {
+                        const notes = (lang === "ru" ? data.about.notes_ru : data.about.notes_he) ?? data.about.notes_he;
+                        return notes?.length ? (
+                          <div className="mt-1">
+                            <span className="text-[0.82rem] text-ink-soft">{t.memories.aboutNotes}:</span>
+                            <ul className="mt-1 list-disc ps-5 text-[0.88rem] text-charcoal/85">
+                              {notes.map((n) => (
+                                <li key={n} dir="auto">
+                                  {n}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null;
+                      })()}
                     </div>
                   )}
                   {data.facts.length ? (
