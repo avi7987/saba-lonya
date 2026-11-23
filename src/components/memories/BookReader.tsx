@@ -30,6 +30,7 @@ type Leaf =
   | { kind: "about"; e: number }
   | { kind: "scan"; e: number; p: number }
   | { kind: "text"; e: number; p: number }
+  | { kind: "all"; e: number }
   | { kind: "blank" };
 
 
@@ -55,19 +56,6 @@ export default function BookReader({ entries, start = 0, withCover = false, onCl
 
   const [view, setView] = useState<"he" | "original">(lang === "ru" ? "original" : "he");
 
-  // the book, leaf by leaf (always an even number per piece, so pages pair into spreads)
-  const { leaves, startOf } = useMemo(() => {
-    const out: Leaf[] = withCover ? [{ kind: "cover" }, { kind: "contents" }] : [];
-    const starts: number[] = [];
-    entries.forEach((e, ei) => {
-      starts.push(out.length);
-      out.push({ kind: "title", e: ei }, { kind: "about", e: ei });
-      const pages = data[e.memoryId]?.pages ?? [];
-      pages.forEach((_, pi) => out.push({ kind: "scan", e: ei, p: pi }, { kind: "text", e: ei, p: pi }));
-    });
-    return { leaves: out, startOf: starts };
-  }, [entries, data, withCover]);
-
   // two pages side by side on a wide screen, one on a phone
   const [wide, setWide] = useState(false);
   useEffect(() => {
@@ -77,6 +65,25 @@ export default function BookReader({ entries, start = 0, withCover = false, onCl
     m.addEventListener("change", on);
     return () => m.removeEventListener("change", on);
   }, []);
+
+  // the book, leaf by leaf (always an even number per piece, so pages pair into spreads)
+  const { leaves, startOf } = useMemo(() => {
+    const out: Leaf[] = withCover ? [{ kind: "cover" }, { kind: "contents" }] : [];
+    const starts: number[] = [];
+    entries.forEach((e, ei) => {
+      starts.push(out.length);
+      out.push({ kind: "title", e: ei }, { kind: "about", e: ei });
+      const pages = data[e.memoryId]?.pages ?? [];
+      if (wide) pages.forEach((_, pi) => out.push({ kind: "scan", e: ei, p: pi }, { kind: "text", e: ei, p: pi }));
+      else {
+        // on a phone: all the original pages first, then the whole translation in one piece, read straight through
+        pages.forEach((_, pi) => out.push({ kind: "scan", e: ei, p: pi }));
+        if (pages.length) out.push({ kind: "all", e: ei });
+      }
+    });
+    return { leaves: out, startOf: starts };
+  }, [entries, data, withCover, wide]);
+
   const step = wide ? 2 : 1;
 
   // opens on the cover, or (from the contents of the writings page) on one piece, once every piece is in
@@ -273,6 +280,46 @@ export default function BookReader({ entries, start = 0, withCover = false, onCl
               <p className="flex-1 text-ink-soft">{view === "he" ? b.noHebrew : b.noWords}</p>
             )}
             {words && <p className="mt-2 text-[0.72rem] text-ink-soft/80">{careful ? b.careful : b.machine}</p>}
+          </div>,
+          i
+        );
+      }
+      case "all": {
+        // every page's words, one after another, scrolled like one long page
+        const pages = r?.pages ?? [];
+        const allCareful = pages.every((p) => (view === "he" ? p.heCareful || p.heChecked : p.originalCareful || p.originalChecked));
+        return paper(
+          side,
+          <div className="flex h-full flex-col px-7 pb-12 pt-8">
+            <div className="mb-3 border-b border-[#e0d6c3] pb-2">
+              <span className="block truncate font-display text-[1.05rem] text-burgundy" dir="auto">
+                {e?.title}
+              </span>
+            </div>
+            <div className="flex-1 overflow-auto overscroll-contain">
+              {pages.map((p, pi) => {
+                const words = view === "he" ? p.he : p.original;
+                return (
+                  <section key={p.file} className="mb-6">
+                    {pages.length > 1 && (
+                      <span className="mb-2 flex items-center gap-3 text-[0.75rem] text-ink-soft/80">
+                        <span className="h-px flex-1 bg-[#e0d6c3]" />
+                        {b.pageOf(pi + 1, pages.length)}
+                        <span className="h-px flex-1 bg-[#e0d6c3]" />
+                      </span>
+                    )}
+                    {words ? (
+                      <p dir={view === "he" ? "rtl" : "auto"} className="whitespace-pre-line font-display text-[1.12rem] leading-[1.85] text-charcoal/90">
+                        {words}
+                      </p>
+                    ) : (
+                      <p className="text-ink-soft">{view === "he" ? b.noHebrew : b.noWords}</p>
+                    )}
+                  </section>
+                );
+              })}
+              {!!pages.length && <p className="mt-2 text-[0.72rem] text-ink-soft/80">{allCareful ? b.careful : b.machine}</p>}
+            </div>
           </div>,
           i
         );
