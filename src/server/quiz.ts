@@ -1,7 +1,7 @@
 import "server-only";
 import { ROOT } from "@/content/family";
 import { sortYear } from "@/lib/photoDate";
-import { store } from "./store";
+import { factStore, store } from "./store";
 import { treeState } from "./treeEdit";
 
 /*
@@ -19,6 +19,7 @@ export type QuizCard =
 const OPEN = "quiz-open";
 const OWN = "quiz-questions";
 const OFF = "quiz-off";
+const DONE = "quiz-answered";
 const MAX_OPEN = 40;
 
 /** what he would ask if the owner has not written questions of their own */
@@ -97,6 +98,23 @@ export async function rememberOpen(q: string) {
   await saveOpen([{ q: text, at: new Date().toISOString() }, ...list]);
 }
 
+/** the questions someone already answered, on any device: they are not asked again */
+async function answeredIds(): Promise<Set<string>> {
+  try {
+    const v = JSON.parse((await store.getMeta(DONE)) ?? "[]");
+    return new Set(Array.isArray(v) ? v.filter((x) => typeof x === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+export async function markAnswered(id: string) {
+  if (!id) return;
+  const done = await answeredIds();
+  if (done.has(id)) return;
+  done.add(id);
+  await store.setMeta(DONE, JSON.stringify([...done].slice(-2000)));
+}
+
 /** once someone answered it (or the owner removed it), it is no longer asked */
 export async function dropOpen(idOrText: string) {
   const list = await openQuestions();
@@ -118,18 +136,32 @@ export async function quizCards(want?: string): Promise<QuizCard[]> {
   const memories = (await store.list()).filter((m) => m.status !== "rejected" && !m.deleteRequest);
   const files = memories.flatMap((m) =>
     m.files
-      // photos only: a page of writing (a letter, a poem) is not asked "when was this taken" or "who is in it"
-      .filter((f) => f.kind !== "audio" && !f.deleteRequest && !f.page && m.type !== "letter" && m.type !== "recipe" && (f.thumb || f.kind === "image"))
-      .map((f) => ({ m, f, people: new Set([...(m.people ?? []), ...(f.people ?? [])].filter((x) => x !== ROOT)) }))
+      // photos only: a page of writing (a letter, a poem, a story) is not asked "when was this taken" or "who is in it";
+      // a picture shared with a story counts only once it was looked at and found to be a photo
+      .filter((f) => f.kind !== "audio" && !f.deleteRequest && !f.page && m.type !== "letter" && m.type !== "recipe" && !(m.type === "story" && !f.aiTriedAt) && (f.thumb || f.kind === "image"))
+      .map((f) => ({ m, f, tagged: new Set([...(m.people ?? []), ...(f.people ?? [])]) }))
   );
+  // who is in it: asked only when someone may be there who is not named yet. Grandpa alone needs no
+  // question; a photo with nobody in it (a place, a thing) neither.
+  const askWho = (f: (typeof files)[number]["f"], tagged: Set<string>) => {
+    if (f.faces === 0) return false;
+    if (typeof f.faces === "number") return f.faces > tagged.size;
+    return tagged.size === 0;
+  };
+  const done = await answeredIds();
+  // what the family already told in answer to a question (also before answers were remembered here)
+  const told = new Set((await factStore.list()).flatMap((x) => x.sources.filter((s) => s.kind === "family" && s.quote).map((s) => norm(s.quote!))));
+  const bornTold = (name: string) => [...told].some((q) => q.includes(norm(name)));
   const src = (m: { id: string }, f: { thumb?: string; name: string }) => `/api/files/memories/${m.id}/${f.thumb ?? f.name}`;
   const when: QuizCard[] = shuffle(files.filter((x) => !x.f.date || x.f.date.source === "ai"))
+    .filter(({ m, f }) => !done.has(`pw-${m.id}-${f.name}`))
     .map(({ m, f }) => ({ id: `pw-${m.id}-${f.name}`, kind: "photo-when", src: src(m, f), memoryId: m.id, file: f.name }));
-  const who: QuizCard[] = shuffle(files.filter((x) => !x.people.size))
+  const who: QuizCard[] = shuffle(files.filter((x) => x.m.type !== "story" && askWho(x.f, x.tagged)))
+    .filter(({ m, f }) => !done.has(`pp-${m.id}-${f.name}`))
     .map(({ m, f }) => ({ id: `pp-${m.id}-${f.name}`, kind: "photo-who", src: src(m, f), memoryId: m.id, file: f.name, year: sortYear(f.date) }));
 
-  const asked: QuizCard[] = (await openQuestions()).map((x) => ({ id: `a-${hashId(x.q)}`, kind: "fact", text: x.q, from: "asked" }));
-  const own: QuizCard[] = shuffle(await ownQuestions()).map((q) => {
+  const asked: QuizCard[] = (await openQuestions()).filter((x) => !told.has(norm(x.q))).map((x) => ({ id: `a-${hashId(x.q)}`, kind: "fact", text: x.q, from: "asked" }));
+  const own: QuizCard[] = shuffle((await ownQuestions()).filter((q) => !done.has(`o-${hashId(q)}`) && !told.has(norm(q)))).map((q) => {
     const d = DEFAULT_QUESTIONS.indexOf(q);
     return { id: `o-${hashId(q)}`, kind: "fact", text: q, textRu: d >= 0 ? DEFAULT_RU[d] : undefined, from: "owner" };
   });
@@ -145,7 +177,7 @@ export async function quizCards(want?: string): Promise<QuizCard[]> {
     const kids = g.childrenOf(ROOT);
     const close = [ROOT, ...g.partnersOf(ROOT), ...kids, ...kids.flatMap((k) => g.partnersOf(k)), ...kids.flatMap((k) => g.childrenOf(k))];
     born = Array.from(new Set(close))
-      .filter((id) => real(id) && !g.byId.get(id)!.born)
+      .filter((id) => real(id) && !g.byId.get(id)!.born && !done.has(`b-${id}`) && !bornTold(g.byId.get(id)!.name))
       .map((id) => {
         const p = g.byId.get(id)!;
         return { id: `b-${id}`, kind: "born", personId: id, name: p.name, gender: p.gender };

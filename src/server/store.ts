@@ -31,6 +31,8 @@ export type StoredFile = {
   phash?: string;
   /** someone asked the owner to remove this file */
   deleteRequest?: DeleteRequest;
+  /** how many people the photo shows, as the computer counted them (0: a place or a thing) */
+  faces?: number;
   /** a page of writing (a letter, poem, greeting, typed or handwritten text), not a photo: its words are read */
   page?: boolean;
   /** last time the date estimate was tried (so it is retried later, not on every visit) */

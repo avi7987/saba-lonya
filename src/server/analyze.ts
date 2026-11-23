@@ -49,7 +49,7 @@ export async function analyzeMemory(id: string, opts: { only?: string; force?: b
       if (!est.date) return { ...f, aiTriedAt: tried, page: est.document || f.page };
       const user = opts.force ? undefined : f.date?.source === "user" ? f.date : undefined;
       const exif = f.date?.source === "exif" ? f.date : undefined;
-      return { ...f, aiTriedAt: tried, page: est.document || f.page, date: chooseDate(user, exif, est) ?? f.date, category: f.category ?? est?.category };
+      return { ...f, aiTriedAt: tried, page: est.document || f.page, faces: est.faces ?? f.faces, date: chooseDate(user, exif, est) ?? f.date, category: f.category ?? est?.category };
     }),
   }));
 }

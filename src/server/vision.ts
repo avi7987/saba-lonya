@@ -20,7 +20,7 @@ const base64 = (b: Uint8Array) => {
   return btoa(s);
 };
 
-export type Estimate = { date: PhotoDate; reproduction: boolean; category?: CategoryId; document?: boolean };
+export type Estimate = { date: PhotoDate; reproduction: boolean; category?: CategoryId; document?: boolean; faces?: number };
 
 export async function estimatePhoto(jpeg: Uint8Array, opts: { rosaInPhoto?: boolean } = {}): Promise<Estimate | null> {
   const ai = await binding();
@@ -37,7 +37,7 @@ ${rosa}
 Pick a "category" from: ${CATEGORIES.join(", ")} (family gatherings = family, a young child = childhood, holidays/weddings/birthdays = celebrations, outdoors/trips = travel, grandchildren with an older man = grandchildren, otherwise moments).
 Set "document": true if the picture is mainly a PAGE OF WRITING (a letter, poem, greeting card, typed or handwritten text, a notebook page, a certificate, a newspaper clipping) rather than a photo of people, places or things; for such a page, date it by its paper and writing if you can.
 Reply with ONLY a JSON object, no other text:
-{"document": <true|false>, "year_from": <int>, "year_to": <int>, "best_year": <int>, "reproduction": <true|false>, "rosa_age": <int|null>, "category": "<category>", "clues_he": "<one short Hebrew sentence with the main clues>"}`;
+{"document": <true|false>, "people": <how many people can be seen, 0 if none>, "year_from": <int>, "year_to": <int>, "best_year": <int>, "reproduction": <true|false>, "rosa_age": <int|null>, "category": "<category>", "clues_he": "<one short Hebrew sentence with the main clues>"}`;
 
   try {
     const res = (await ai.run(MODEL, {
@@ -74,10 +74,12 @@ Reply with ONLY a JSON object, no other text:
     if (!to && best) to = best + 5;
     const date = cleanDate({ from, to, clues: typeof o.clues_he === "string" ? o.clues_he : undefined }, "ai");
     const document = o.document === true;
+    const n = Number(o.people);
+    const faces = Number.isInteger(n) && n >= 0 && n < 100 ? n : undefined;
     // a page of writing is worth reading even when its date cannot be guessed
-    if (!date) return document ? { date: undefined as unknown as PhotoDate, reproduction: false, document } : null;
+    if (!date) return document ? { date: undefined as unknown as PhotoDate, reproduction: false, document, faces } : null;
     const category = CATEGORIES.includes(o.category as CategoryId) ? (o.category as CategoryId) : undefined;
-    return { date, reproduction: o.reproduction === true, category, document };
+    return { date, reproduction: o.reproduction === true, category, document, faces };
   } catch (e) {
     console.warn("[vision] estimate failed", e);
     return null;
