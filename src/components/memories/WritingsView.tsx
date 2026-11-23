@@ -42,7 +42,7 @@ export default function WritingsView() {
             <Feather className="h-4 w-4" aria-hidden />
             {b.eyebrow}
           </span>
-          <h1 className="font-display text-[clamp(2.2rem,5vw,3.6rem)] font-light leading-tight text-burgundy">{b.title}</h1>
+          <h1 className="font-display text-[clamp(2.2rem,5vw,3.6rem)] font-medium leading-tight text-burgundy">{b.title}</h1>
           <p className="max-w-2xl text-lg leading-relaxed text-ink-soft">{b.lead}</p>
         </div>
 

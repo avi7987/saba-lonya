@@ -118,7 +118,8 @@ export async function quizCards(want?: string): Promise<QuizCard[]> {
   const memories = (await store.list()).filter((m) => m.status !== "rejected" && !m.deleteRequest);
   const files = memories.flatMap((m) =>
     m.files
-      .filter((f) => f.kind !== "audio" && !f.deleteRequest && (f.thumb || f.kind === "image"))
+      // photos only: a page of writing (a letter, a poem) is not asked "when was this taken" or "who is in it"
+      .filter((f) => f.kind !== "audio" && !f.deleteRequest && !f.page && m.type !== "letter" && m.type !== "recipe" && (f.thumb || f.kind === "image"))
       .map((f) => ({ m, f, people: new Set([...(m.people ?? []), ...(f.people ?? [])].filter((x) => x !== ROOT)) }))
   );
   const src = (m: { id: string }, f: { thumb?: string; name: string }) => `/api/files/memories/${m.id}/${f.thumb ?? f.name}`;
